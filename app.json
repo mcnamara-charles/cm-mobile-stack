@@ -2,6 +2,8 @@
   "expo": {
     "name": "cm-mobile-stack",
     "slug": "cm-mobile-stack",
+    "scheme": "dogstack",
+    "deepLinks": ["dogstack://"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,8 +21,12 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      }
+    },
+    "androidNavigationBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#ffffff",
+      "visible": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
