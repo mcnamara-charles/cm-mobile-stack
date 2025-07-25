@@ -16,7 +16,6 @@ import * as ImagePicker from 'expo-image-picker'
 import * as FileSystem from 'expo-file-system'
 import { supabase } from '../services/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { decode } from 'base64-arraybuffer'
 import { SUPABASE_URL } from '../../config'
 
 export default function CompleteProfileScreen({ navigation }: any) {

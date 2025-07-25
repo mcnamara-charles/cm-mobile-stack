@@ -18,6 +18,7 @@ type RootStackParamList = {
   Settings: undefined
   Help: undefined
   Preferences: undefined
+  Legal: undefined
 }
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>
@@ -41,17 +42,23 @@ const options: {
     navigateTo: 'Settings',
   },
   {
+    key: 'preferences',
+    label: 'Preferences',
+    icon: <Ionicons name="options-outline" size={20} color="#333" />,
+    navigateTo: 'Preferences',
+  },
+  {
     key: 'help',
     label: 'Help Center',
     icon: <Feather name="help-circle" size={20} color="#333" />,
     navigateTo: 'Help',
   },
   {
-    key: 'preferences',
-    label: 'Preferences',
-    icon: <Ionicons name="options-outline" size={20} color="#333" />,
-    navigateTo: 'Preferences',
-  },
+    key: 'legal',
+    label: 'Legal',
+    icon: <Feather name="file-text" size={20} color="#333" />,
+    navigateTo: 'Legal',
+  }
 ]
 
 export default function MoreScreen() {
