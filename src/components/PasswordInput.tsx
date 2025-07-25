@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import {
-  View,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   TextInputProps,
+  View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useTheme } from '../context/themeContext'
+import { ThemedInputWrapper } from './Themed' // adjust path if needed
 
 type Props = TextInputProps & {
   value: string
@@ -21,12 +23,14 @@ export default function PasswordInput({
   ...rest
 }: Props) {
   const [show, setShow] = useState(false)
+  const { theme } = useTheme()
 
   return (
-    <View style={styles.wrapper}>
+    <ThemedInputWrapper>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { color: theme.colors.text }]}
         placeholder={placeholder}
+        placeholderTextColor={theme.colors.mutedText}
         secureTextEntry={!show}
         value={value}
         onChangeText={onChangeText}
@@ -36,40 +40,27 @@ export default function PasswordInput({
       />
       <TouchableOpacity
         onPress={() => setShow(prev => !prev)}
-        style={styles.iconWrapper}
+        style={[styles.iconWrapper, { borderLeftColor: theme.colors.border }]}
         activeOpacity={0.7}
       >
         <Ionicons
           name={show ? 'eye-off-outline' : 'eye-outline'}
           size={22}
-          color="#666"
+          color={theme.colors.mutedText}
         />
       </TouchableOpacity>
-    </View>
+    </ThemedInputWrapper>
   )
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingRight: 0,
-    marginBottom: 14,
-    backgroundColor: '#f9f9f9',
-  },
   input: {
     flex: 1,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#111',
   },
   iconWrapper: {
     padding: 12,
     borderLeftWidth: 1,
-    borderLeftColor: '#ccc',
   },
 })

@@ -1,13 +1,25 @@
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import {
+  TextInput,
+  StyleSheet,
+  Alert,
+} from 'react-native'
 import { useAuth } from '../context/AuthContext'
 import PasswordInput from '../components/PasswordInput'
+import { useTheme } from '../context/themeContext'
+import {
+  ThemedView,
+  ThemedText,
+  ThemedInputWrapper,
+  ThemedTouchableOpacity,
+} from '../components/Themed'
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { signInWithEmail } = useAuth()
+  const { theme } = useTheme()
 
   const handleLogin = async () => {
     try {
@@ -21,28 +33,43 @@ export default function LoginScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Log In</Text>
+    <ThemedView style={styles.container}>
+      <ThemedText style={styles.title}>Log In</ThemedText>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+      <ThemedInputWrapper>
+        <TextInput
+          style={[styles.input, { color: theme.colors.text }]}
+          placeholder="Email"
+          placeholderTextColor={theme.colors.mutedText}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+      </ThemedInputWrapper>
 
       <PasswordInput value={password} onChangeText={setPassword} />
 
-      <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
-      </TouchableOpacity>
+      <ThemedTouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: theme.colors.primary },
+          loading && styles.buttonDisabled,
+        ]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <ThemedText style={styles.buttonText}>
+          {loading ? 'Logging in...' : 'Login'}
+        </ThemedText>
+      </ThemedTouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-        <Text style={styles.link}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
-    </View>
+      <ThemedTouchableOpacity onPress={() => navigation.navigate('Signup')}>
+        <ThemedText style={styles.link}>
+          Don't have an account? Sign up
+        </ThemedText>
+      </ThemedTouchableOpacity>
+    </ThemedView>
   )
 }
 
@@ -51,33 +78,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 24,
     textAlign: 'center',
-    color: '#111',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 14,
+    flex: 1,
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#333',
     padding: 16,
     borderRadius: 10,
+    marginTop: 10,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    color: '#fff',
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 16,
@@ -85,7 +105,6 @@ const styles = StyleSheet.create({
   link: {
     marginTop: 20,
     textAlign: 'center',
-    color: '#666',
     fontSize: 14,
   },
 })

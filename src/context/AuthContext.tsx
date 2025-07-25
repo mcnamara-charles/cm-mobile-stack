@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         const u = { id: session.user.id, email: session.user.email ?? undefined }
         setUser(u)
-        ensureUserRow(u)
       } else {
         setUser(null)
       }

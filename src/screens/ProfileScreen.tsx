@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
 import {
-    View,
-    Text,
     StyleSheet,
     Image,
     TouchableOpacity,
@@ -9,6 +7,7 @@ import {
     Platform,
     ActivityIndicator,
     Alert,
+    View,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons, Feather } from '@expo/vector-icons'
@@ -18,18 +17,13 @@ import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
+import { useTheme } from '../context/themeContext'
+import { ThemedView, ThemedText } from '../components/Themed'
 
 export default function ProfileScreen() {
     const navigation = useNavigation()
     const { user } = useAuth()
-
-    if (!user) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={{ color: '#888' }}>You're not logged in.</Text>
-            </View>
-        )
-    }
+    const { theme } = useTheme()
 
     const [profile, setProfile] = useState<{
         first_name: string
@@ -43,10 +37,8 @@ export default function ProfileScreen() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!user) {
-                console.log("User no")
-                return
-            }
+            if (!user) return
+
             const { data, error } = await supabase
                 .from('users')
                 .select('first_name, last_name, profile_url, address, headline, banner_url')
@@ -65,6 +57,7 @@ export default function ProfileScreen() {
     }, [user])
 
     const uploadBannerImage = async () => {
+        if (!user) return
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -97,7 +90,6 @@ export default function ProfileScreen() {
             })
 
             if (uploadResponse.status !== 200) {
-                console.error('❌ Upload failed response:', uploadResponse)
                 throw new Error(`Upload failed with status ${uploadResponse.status}`)
             }
 
@@ -122,60 +114,75 @@ export default function ProfileScreen() {
         }
     }
 
+    if (!user) {
+        return (
+            <ThemedView style={styles.loadingContainer}>
+                <ThemedText style={{ color: theme.colors.mutedText }}>You're not logged in.</ThemedText>
+            </ThemedView>
+        )
+    }
+
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#888" />
-            </View>
+            <ThemedView style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.mutedText} />
+            </ThemedView>
         )
     }
 
     if (!profile) {
         return (
-            <View style={styles.loadingContainer}>
-                <Text style={{ color: '#888' }}>No profile found.</Text>
-            </View>
+            <ThemedView style={styles.loadingContainer}>
+                <ThemedText style={{ color: theme.colors.mutedText }}>No profile found.</ThemedText>
+            </ThemedView>
         )
     }
 
     const name = `${profile.first_name} ${profile.last_name[0]}.`
 
     return (
-        <ScrollView style={styles.root} contentContainerStyle={{ paddingBottom: 60 }}>
-            <View collapsable={false}>
-                {/* Header */}
-                <View style={styles.header}>
+        <ScrollView style={[styles.root, { backgroundColor: theme.colors.background }]} contentContainerStyle={{ paddingBottom: 60 }}>
+            <ThemedView>
+                <View style={[styles.header, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
+                        <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
                     </TouchableOpacity>
-                    <Text style={styles.headerText}>{name}</Text>
+                    <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>{name}</ThemedText>
                     <TouchableOpacity>
-                        <Feather name="edit-2" size={20} color="#333" />
+                        <Feather name="edit-2" size={20} color={theme.colors.text} />
                     </TouchableOpacity>
                 </View>
 
-                {/* Banner */}
                 {profile.banner_url ? (
-                    <Image source={{ uri: profile.banner_url }} style={styles.banner} />
+                    <View style={styles.bannerWrapper}>
+                        <Image
+                            source={{ uri: profile.banner_url }}
+                            style={styles.bannerImage}
+                            resizeMode="cover"
+                            onError={(e) => console.warn('Banner image load error:', e.nativeEvent.error)}
+                        />
+                    </View>
                 ) : (
-                    <TouchableOpacity style={styles.bannerPlaceholder} onPress={uploadBannerImage}>
-                        <Feather name="image" size={20} color="#999" />
-                        <Text style={styles.bannerPrompt}>Add a banner photo</Text>
+                    <TouchableOpacity style={[styles.bannerPlaceholder, { backgroundColor: theme.colors.card }]} onPress={uploadBannerImage}>
+                        <Feather name="image" size={20} color={theme.colors.mutedText} />
+                        <ThemedText style={[styles.bannerPrompt, { color: theme.colors.mutedText }]}>Add a banner photo</ThemedText>
                     </TouchableOpacity>
                 )}
 
-                {/* Avatar and Info */}
                 <View style={styles.profileWrapper}>
-                    <Image source={{ uri: profile.profile_url }} style={styles.avatar} />
+                    <Image
+                        source={{ uri: profile.profile_url }}
+                        style={[styles.avatar, { borderColor: theme.colors.background }]}
+                    />
                     <View style={styles.info}>
-                        <Text style={styles.name}>{name}</Text>
-                        <Text style={styles.address}>{profile.address}</Text>
+                        <ThemedText style={[styles.name, { color: theme.colors.text }]}>{name}</ThemedText>
+                        <ThemedText style={[styles.address, { color: theme.colors.mutedText }]}>{profile.address}</ThemedText>
                         {profile.headline ? (
-                            <Text style={styles.headline}>{profile.headline}</Text>
+                            <ThemedText style={[styles.headline, { color: theme.colors.mutedText }]}>{profile.headline}</ThemedText>
                         ) : null}
                     </View>
                 </View>
-            </View>
+            </ThemedView>
         </ScrollView>
     )
 }
@@ -183,13 +190,11 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
     },
     header: {
         paddingTop: 20,
@@ -198,8 +203,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderBottomWidth: 1,
-        borderColor: '#eee',
-        backgroundColor: '#fff',
         justifyContent: 'space-between',
         ...Platform.select({
             ios: {
@@ -217,7 +220,6 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 18,
         fontWeight: '600',
-        color: '#222',
         marginLeft: 16,
     },
     profileWrapper: {
@@ -239,26 +241,27 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 22,
         fontWeight: '700',
-        color: '#222',
     },
     address: {
         fontSize: 14,
-        color: '#666',
         marginTop: 2,
     },
     headline: {
         fontSize: 14,
-        color: '#999',
         marginTop: 4,
     },
-    banner: {
+    bannerWrapper: {
         width: '100%',
         height: 180,
-        resizeMode: 'cover',
+        backgroundColor: '#ccc', // fallback color
+        overflow: 'hidden',
+    },
+    bannerImage: {
+        width: '100%',
+        height: '100%',
     },
     bannerPlaceholder: {
         height: 180,
-        backgroundColor: '#f5f5f5',
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'row',
@@ -266,7 +269,6 @@ const styles = StyleSheet.create({
     },
     bannerPrompt: {
         fontSize: 14,
-        color: '#999',
         fontStyle: 'italic',
     },
 })

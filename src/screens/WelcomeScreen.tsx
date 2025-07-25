@@ -1,21 +1,26 @@
+// WelcomeScreen.tsx (updated)
 import { useEffect, useState } from 'react'
 import {
-  View,
-  Text,
   StyleSheet,
-  Image,
-  ActivityIndicator,
   Platform,
-  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
 import { format } from 'date-fns'
-import { useNavigation } from '@react-navigation/native' // ✅
+import { useNavigation } from '@react-navigation/native'
+import { 
+  ThemedView,
+  ThemedText,
+  ThemedImage,
+  ThemedTouchableOpacity,
+} from '../components/Themed'
+import { useTheme } from '../context/themeContext'
 
 export default function WelcomeScreen() {
   const { user } = useAuth()
-  const navigation = useNavigation<any>() // ✅
+  const navigation = useNavigation<any>()
+  const { theme } = useTheme()
   const [firstName, setFirstName] = useState<string | null>(null)
   const [profileUrl, setProfileUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -23,13 +28,13 @@ export default function WelcomeScreen() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user) return
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('users')
         .select('first_name, profile_url')
         .eq('id', user.id)
         .single()
 
-      if (!error && data) {
+      if (data) {
         setFirstName(data.first_name)
         setProfileUrl(data.profile_url)
       }
@@ -43,39 +48,36 @@ export default function WelcomeScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#333" />
-      </View>
+      <ThemedView style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </ThemedView>
     )
   }
 
   return (
-    <View style={styles.root}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Hi, {firstName || 'there'} 👋</Text>
-          <Text style={styles.date}>{today}</Text>
-        </View>
+    <ThemedView style={styles.root}>
+      <ThemedView style={[styles.header, { borderColor: theme.colors.border }]}>
+        <ThemedView style={styles.userInfo}>
+          <ThemedText style={styles.greeting}>Hi, {firstName || 'there'} 👋</ThemedText>
+          <ThemedText style={styles.date}>{today}</ThemedText>
+        </ThemedView>
         {profileUrl && (
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-            {<Image source={{ uri: profileUrl }} style={styles.avatar} />}
-          </TouchableOpacity>
+          <ThemedTouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} />
+          </ThemedTouchableOpacity>
         )}
-      </View>
+      </ThemedView>
 
-      {/* Body */}
-      <View style={styles.body}>
-        <Text style={styles.title}>Welcome to CM Mobile Stack</Text>
-      </View>
-    </View>
+      <ThemedView style={styles.body}>
+        <ThemedText style={styles.title}>Welcome to CM Mobile Stack</ThemedText>
+      </ThemedView>
+    </ThemedView>
   )
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
     paddingTop: 20,
@@ -85,8 +87,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -105,11 +105,9 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#222',
   },
   date: {
     fontSize: 14,
-    color: '#777',
     marginTop: 2,
   },
   avatar: {
@@ -117,7 +115,6 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 1,
-    borderColor: '#ccc',
   },
   body: {
     flex: 1,
@@ -128,7 +125,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#111',
     textAlign: 'center',
   },
   center: {
