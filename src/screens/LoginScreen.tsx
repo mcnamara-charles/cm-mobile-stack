@@ -12,7 +12,7 @@ import {
   ThemedText,
   ThemedInputWrapper,
   ThemedTouchableOpacity,
-} from '../components/Themed'
+} from '../components/themed'
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('')

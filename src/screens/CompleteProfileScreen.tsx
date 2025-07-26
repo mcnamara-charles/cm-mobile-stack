@@ -21,7 +21,7 @@ import {
   ThemedView,
   ThemedText,
   ThemedTouchableOpacity,
-} from '../components/Themed'
+} from '../components/themed'
 
 export default function CompleteProfileScreen({ navigation }: any) {
   const { user, ensureValidUser, signOut } = useAuth()

@@ -7,9 +7,9 @@ import {
   View,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { Ionicons } from '@expo/vector-icons'
+import { ThemedIcon } from '../components/themed'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText } from '../components/Themed'
+import { ThemedView, ThemedText } from '../components/themed'
 
 export default function PreferencesScreen() {
   const navigation = useNavigation()
@@ -28,7 +28,7 @@ export default function PreferencesScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          <ThemedIcon type="ionicons" name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <ThemedText style={styles.headerText}>Preferences</ThemedText>
         <View style={{ width: 24 }} />

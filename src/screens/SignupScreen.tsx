@@ -14,7 +14,7 @@ import {
   ThemedText,
   ThemedInputWrapper,
   ThemedTouchableOpacity,
-} from '../components/Themed'
+} from '../components/themed'
 
 export default function SignupScreen({ navigation }: any) {
   const { signUpWithEmail } = useAuth()

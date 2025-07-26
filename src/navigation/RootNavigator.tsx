@@ -15,7 +15,8 @@ import ProfileScreen from '../screens/ProfileScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import SettingsScreen from '../screens/SettingsScreen'
 
-import { Feather, Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons'
+import { Feather, MaterialIcons, Entypo } from '@expo/vector-icons'
+import { ThemedIcon } from '../components/themed'
 
 const Stack = createNativeStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -50,7 +51,7 @@ function MainTabs() {
         name="Inbox"
         component={WelcomeScreen} // Replace with InboxScreen when built
         options={{
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-outline" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <ThemedIcon type="ionicons" name="chatbubble-outline" color={color} size={size} />,
         }}
       />
       <Tab.Screen

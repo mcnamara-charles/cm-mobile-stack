@@ -10,7 +10,7 @@ import { Feather, Ionicons, AntDesign } from '@expo/vector-icons'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText, ThemedInputWrapper } from '../components/Themed'
+import { ThemedView, ThemedText, ThemedInputWrapper } from '../components/themed'
 
 type RootStackParamList = {
   Profile: undefined

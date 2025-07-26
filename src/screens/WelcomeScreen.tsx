@@ -14,7 +14,7 @@ import {
   ThemedText,
   ThemedImage,
   ThemedTouchableOpacity,
-} from '../components/Themed'
+} from '../components/themed'
 import { useTheme } from '../context/themeContext'
 
 export default function WelcomeScreen() {

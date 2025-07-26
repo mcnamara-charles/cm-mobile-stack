@@ -10,7 +10,7 @@ import {
     View,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { Ionicons, Feather } from '@expo/vector-icons'
+import { ThemedIcon } from '../components/themed'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
 import * as ImagePicker from 'expo-image-picker'
@@ -18,7 +18,7 @@ import * as ImageManipulator from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText } from '../components/Themed'
+import { ThemedView, ThemedText } from '../components/themed'
 
 export default function ProfileScreen() {
     const navigation = useNavigation()
@@ -145,11 +145,11 @@ export default function ProfileScreen() {
             <ThemedView>
                 <View style={[styles.header, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+                        <ThemedIcon type="ionicons" name="arrow-back" size={24} color={theme.colors.text} />
                     </TouchableOpacity>
                     <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>{name}</ThemedText>
                     <TouchableOpacity>
-                        <Feather name="edit-2" size={20} color={theme.colors.text} />
+                        <ThemedIcon type="feather" name="edit-2" size={20} color={theme.colors.text} />
                     </TouchableOpacity>
                 </View>
 
@@ -164,7 +164,7 @@ export default function ProfileScreen() {
                     </View>
                 ) : (
                     <TouchableOpacity style={[styles.bannerPlaceholder, { backgroundColor: theme.colors.card }]} onPress={uploadBannerImage}>
-                        <Feather name="image" size={20} color={theme.colors.mutedText} />
+                        <ThemedIcon type="feather" name="image" size={20} color={theme.colors.mutedText} />
                         <ThemedText style={[styles.bannerPrompt, { color: theme.colors.mutedText }]}>Add a banner photo</ThemedText>
                     </TouchableOpacity>
                 )}

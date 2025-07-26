@@ -6,9 +6,9 @@ import {
   TextInputProps,
   View,
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { ThemedIcon } from './themed'
 import { useTheme } from '../context/themeContext'
-import { ThemedInputWrapper } from './Themed' // adjust path if needed
+import { ThemedInputWrapper } from './themed' // adjust path if needed
 
 type Props = TextInputProps & {
   value: string
@@ -43,7 +43,8 @@ export default function PasswordInput({
         style={[styles.iconWrapper, { borderLeftColor: theme.colors.border }]}
         activeOpacity={0.7}
       >
-        <Ionicons
+        <ThemedIcon
+          type="ionicons"
           name={show ? 'eye-off-outline' : 'eye-outline'}
           size={22}
           color={theme.colors.mutedText}
