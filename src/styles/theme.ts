@@ -43,10 +43,10 @@ export const baseTheme = {
   },
 }
 
-export type ThemeName = 'light' | 'dark'
+export type ThemeName = 'light' | 'dark' | 'system'
 export type AppTheme = typeof baseTheme
 
-export const themes: Record<ThemeName, AppTheme> = {
+export const themes: Record<'light' | 'dark', AppTheme> = {
   light: {
     colors: {
       background: '#ffffff',

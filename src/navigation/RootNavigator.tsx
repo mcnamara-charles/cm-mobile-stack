@@ -9,11 +9,15 @@ import { supabase } from '../services/supabaseClient'
 import LoginScreen from '../screens/LoginScreen'
 import SignupScreen from '../screens/SignupScreen'
 import WelcomeScreen from '../screens/WelcomeScreen'
+import InboxScreen from '../screens/InboxScreen'
+import CalendarScreen from '../screens/CalendarScreen'
 import MoreScreen from '../screens/MoreScreen'
 import CompleteProfileScreen from '../screens/CompleteProfileScreen'
 import ProfileScreen from '../screens/ProfileScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import SettingsScreen from '../screens/SettingsScreen'
+import HelpCenterScreen from '../screens/HelpCenterScreen'
+import LegalScreen from '../screens/LegalScreen'
 
 import { Feather, MaterialIcons, Entypo } from '@expo/vector-icons'
 import { ThemedIcon } from '../components/themed'
@@ -49,14 +53,14 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Inbox"
-        component={WelcomeScreen} // Replace with InboxScreen when built
+        component={InboxScreen}
         options={{
           tabBarIcon: ({ color, size }) => <ThemedIcon type="ionicons" name="chatbubble-outline" color={color} size={size} />,
         }}
       />
       <Tab.Screen
         name="Calendar"
-        component={WelcomeScreen} // Replace with CalendarScreen when built
+        component={CalendarScreen}
         options={{
           tabBarIcon: ({ color, size }) => <MaterialIcons name="calendar-today" color={color} size={size} />,
         }}
@@ -147,6 +151,22 @@ export default function RootNavigator() {
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
+              options={{
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="Help"
+              component={HelpCenterScreen}
+              options={{
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="Legal"
+              component={LegalScreen}
               options={{
                 animation: 'slide_from_right',
                 gestureEnabled: true,
