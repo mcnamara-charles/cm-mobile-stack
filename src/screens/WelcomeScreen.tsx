@@ -4,18 +4,22 @@ import {
   StyleSheet,
   Platform,
   ActivityIndicator,
+  ScrollView,
+  View,
+  TouchableOpacity,
 } from 'react-native'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
 import { format } from 'date-fns'
 import { useNavigation } from '@react-navigation/native'
-import { 
+import {
   ThemedView,
   ThemedText,
   ThemedImage,
   ThemedTouchableOpacity,
 } from '../components/themed'
 import { useTheme } from '../context/themeContext'
+import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
 
 export default function WelcomeScreen() {
   const { user } = useAuth()
@@ -25,22 +29,24 @@ export default function WelcomeScreen() {
   const [profileUrl, setProfileUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return
-      const { data } = await supabase
-        .from('users')
-        .select('first_name, profile_url')
-        .eq('id', user.id)
-        .single()
+  const fetchUserData = async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('users')
+      .select('first_name, profile_url')
+      .eq('id', user.id)
+      .single()
 
-      if (data) {
-        setFirstName(data.first_name)
-        setProfileUrl(data.profile_url)
-      }
-      setLoading(false)
+    if (data) {
+      setFirstName(data.first_name)
+      setProfileUrl(data.profile_url)
     }
+    setLoading(false)
+  }
 
+  const { refreshControl } = useRefreshableScroll(fetchUserData)
+
+  useEffect(() => {
     fetchUserData()
   }, [user])
 
@@ -55,22 +61,47 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <ThemedView style={styles.root}>
-      <ThemedView style={[styles.header, { borderColor: theme.colors.border }]}>
-        <ThemedView style={styles.userInfo}>
-          <ThemedText style={styles.greeting}>Hi, {firstName || 'there'} 👋</ThemedText>
-          <ThemedText style={styles.date}>{today}</ThemedText>
-        </ThemedView>
-        {profileUrl && (
-          <ThemedTouchableOpacity onPress={() => navigation.navigate('Profile')}>
-            <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} />
-          </ThemedTouchableOpacity>
-        )}
-      </ThemedView>
+    <ThemedView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <ScrollView
+        refreshControl={refreshControl}
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.colors.background }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+          <View style={styles.headerRow}>
+            <View style={styles.greetingBlock}>
+              <ThemedText style={[styles.greeting, { color: theme.colors.text }]}>Hi, {firstName || 'there'} 👋</ThemedText>
+              <ThemedText style={[styles.date, { color: theme.colors.mutedText }]}>{today}</ThemedText>
+            </View>
+            {profileUrl && (
+              <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} cacheKey={profileUrl} />
+              </TouchableOpacity>
+            )}
+          </View>
 
-      <ThemedView style={styles.body}>
-        <ThemedText style={styles.title}>Welcome to CM Mobile Stack</ThemedText>
-      </ThemedView>
+          <View style={[styles.card, { backgroundColor: theme.colors.card, shadowColor: theme.colors.text }]}>
+            <ThemedText style={[styles.cardTitle, { color: theme.colors.text }]}>Welcome to CM Mobile Stack</ThemedText>
+            <ThemedText style={[styles.cardSubtitle, { color: theme.colors.mutedText }]}>Your productivity hub</ThemedText>
+            <View style={styles.quickLinksRow}>
+              <TouchableOpacity style={[styles.quickLink, { backgroundColor: theme.colors.primary + '22' }]} onPress={() => navigation.navigate('Inbox')}>
+                <ThemedText style={[styles.quickLinkText, { color: theme.colors.primary }]}>Inbox</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.quickLink, { backgroundColor: theme.colors.primary + '22' }]} onPress={() => navigation.navigate('Calendar')}>
+                <ThemedText style={[styles.quickLinkText, { color: theme.colors.primary }]}>Calendar</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.quickLink, { backgroundColor: theme.colors.primary + '22' }]} onPress={() => navigation.navigate('Profile')}>
+                <ThemedText style={[styles.quickLinkText, { color: theme.colors.primary }]}>Profile</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>Today</ThemedText>
+            <ThemedText style={[styles.sectionText, { color: theme.colors.text }]}>No events scheduled. Enjoy your day!</ThemedText>
+          </View>
+        </View>
+      </ScrollView>
     </ThemedView>
   )
 }
@@ -78,54 +109,90 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-  },
-  header: {
-    paddingTop: 20,
+    width: '100%',
     paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingTop: 32,
+    paddingBottom: 32,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerRow: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    marginBottom: 32,
   },
-  userInfo: {
+  greetingBlock: {
     flexDirection: 'column',
   },
   greeting: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
   },
   date: {
-    fontSize: 14,
+    fontSize: 16,
     marginTop: 2,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: '#eee',
   },
-  body: {
-    flex: 1,
-    justifyContent: 'center',
+  card: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 32,
     alignItems: 'center',
-    paddingHorizontal: 24,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  title: {
-    fontSize: 26,
+  cardTitle: {
+    fontSize: 22,
     fontWeight: '700',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  cardSubtitle: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  quickLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  quickLink: {
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginHorizontal: 6,
+  },
+  quickLinkText: {
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  section: {
+    width: '100%',
+    marginTop: 24,
+    alignItems: 'flex-start',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  sectionText: {
+    fontSize: 15,
   },
   center: {
     flex: 1,

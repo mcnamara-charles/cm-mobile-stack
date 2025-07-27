@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   StyleSheet,
   View,
@@ -6,18 +6,28 @@ import {
   Platform,
   Switch,
   TouchableOpacity,
+  Modal,
+  Pressable,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedIcon } from '../components/themed'
 import { useTheme } from '../context/themeContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function SettingsScreen() {
   const navigation = useNavigation()
   const { theme } = useTheme()
+  const { signOut } = useAuth()
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
 
   // Mock state for toggles (not functional)
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true)
   const [biometricsEnabled, setBiometricsEnabled] = React.useState(false)
+
+  const handleSignOut = async () => {
+    setShowSignOutModal(false)
+    await signOut()
+  }
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: theme.colors.background }] }>
@@ -40,7 +50,12 @@ export default function SettingsScreen() {
         {/* Account Section */}
         <ThemedText style={[styles.sectionTitle, { color: theme.colors.mutedText }]}>Account</ThemedText>
         <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }] }>
-          <SettingsRow icon={{ type: 'ionicons', name: 'person-outline' }} label="Profile" description="View and edit your personal information" />
+          <SettingsRow 
+            icon={{ type: 'ionicons', name: 'person-outline' }} 
+            label="Profile" 
+            description="View and edit your personal information" 
+            onPress={() => navigation.navigate('Profile' as never)}
+          />
           <SettingsRow icon={{ type: 'ionicons', name: 'mail-outline' }} label="Email" description="Manage your email address and notifications" />
           <SettingsRow icon={{ type: 'ionicons', name: 'key-outline' }} label="Change Password" description="Update your account password" isLast={true} />
         </View>
@@ -65,15 +80,86 @@ export default function SettingsScreen() {
         {/* Danger Zone */}
         <ThemedText style={[styles.sectionTitle, { color: theme.colors.danger }]}>Danger Zone</ThemedText>
         <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.danger }]}> 
-          <SettingsRow icon={{ type: 'ionicons', name: 'log-out-outline' }} label="Sign Out" labelStyle={{ color: theme.colors.danger }} iconColor={theme.colors.danger} description="Sign out of your account on this device" />
+          <SettingsRow 
+            icon={{ type: 'ionicons', name: 'log-out-outline' }} 
+            label="Sign Out" 
+            labelStyle={{ color: theme.colors.danger }} 
+            iconColor={theme.colors.danger} 
+            description="Sign out of your account on this device"
+            onPress={() => setShowSignOutModal(true)}
+          />
           <SettingsRow icon={{ type: 'ionicons', name: 'trash-outline' }} label="Delete Account" labelStyle={{ color: theme.colors.danger }} isLast={true} iconColor={theme.colors.danger} description="Permanently delete your account and data" />
         </View>
       </ScrollView>
+
+      {/* Sign Out Confirmation Modal */}
+      <Modal
+        visible={showSignOutModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setShowSignOutModal(false)}
+        >
+          <Pressable 
+            style={[styles.modalContent, { 
+              backgroundColor: theme.colors.card,
+              borderColor: theme.colors.border
+            }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <View style={[styles.modalIconContainer, { backgroundColor: theme.colors.danger + '15' }]}>
+              <ThemedIcon 
+                type="ionicons" 
+                name="log-out-outline" 
+                size={32} 
+                color={theme.colors.danger} 
+              />
+            </View>
+
+            {/* Title */}
+            <ThemedText style={[styles.modalTitle, { color: theme.colors.text }]}>
+              Sign Out
+            </ThemedText>
+
+            {/* Message */}
+            <ThemedText style={[styles.modalMessage, { color: theme.colors.mutedText }]}>
+              Are you sure you want to sign out? You'll need to sign in again to access your account.
+            </ThemedText>
+
+            {/* Buttons */}
+            <View style={styles.modalButtons}>
+              <ThemedTouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
+                onPress={() => setShowSignOutModal(false)}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[styles.cancelButtonText, { color: theme.colors.text }]}>
+                  Cancel
+                </ThemedText>
+              </ThemedTouchableOpacity>
+
+              <ThemedTouchableOpacity
+                style={[styles.modalButton, styles.signOutButton, { backgroundColor: theme.colors.danger }]}
+                onPress={handleSignOut}
+                activeOpacity={0.8}
+              >
+                <ThemedText style={styles.signOutButtonText}>
+                  Sign Out
+                </ThemedText>
+              </ThemedTouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ThemedView>
   )
 }
 
-function SettingsRow({ icon, label, value, children, labelStyle, isLast, iconColor, description }: any) {
+function SettingsRow({ icon, label, value, children, labelStyle, isLast, iconColor, description, onPress }: any) {
   const { theme } = useTheme()
   return (
     <ThemedTouchableOpacity 
@@ -82,6 +168,7 @@ function SettingsRow({ icon, label, value, children, labelStyle, isLast, iconCol
         isLast && { borderBottomWidth: 0 }
       ]}
       activeOpacity={0.7}
+      onPress={onPress}
     >
       <ThemedIcon type={icon.type} name={icon.name} size={24} color={iconColor || theme.colors.primary} style={styles.rowIcon} />
       <View style={styles.rowContent}>
@@ -160,34 +247,109 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
     paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.06)',
-    minHeight: 48,
+    minHeight: 64,
   },
   rowIcon: {
     marginRight: 16,
-    width: 24,
-    alignItems: 'center',
   },
   rowContent: {
     flex: 1,
     justifyContent: 'center',
   },
   rowLabel: {
-    flex: 1,
     fontSize: 16,
-    fontWeight: '500',
-  },
-  rowValue: {
-    fontSize: 15,
-    marginRight: 12,
-    fontWeight: '400',
+    fontWeight: '600',
+    marginBottom: 2,
   },
   rowDescription: {
     fontSize: 13,
-    marginTop: 2,
     fontWeight: '400',
+    lineHeight: 18,
+  },
+  rowValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 320,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  modalIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  signOutButton: {
+    // backgroundColor set inline
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  signOutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 })

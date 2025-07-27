@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
     StyleSheet,
     Platform,
@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
 import { format } from 'date-fns'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import {
     ThemedView,
     ThemedText,
@@ -22,6 +22,10 @@ import {
 import { useTheme } from '../context/themeContext'
 import { Feather } from '@expo/vector-icons'
 import { searchUsersByEmail } from '../services/api/users'
+import { fetchLatestMessagesForUser } from '../services/api/messages'
+import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
+import { ScrollView } from 'react-native'
+
 
 type Message = {
     id: string
@@ -30,6 +34,13 @@ type Message = {
     timestamp: string
     read: boolean
     sender: string
+    profile_url?: string | null
+    otherUserId: string
+    first_name?: string
+    last_name?: string
+    isFromMe?: boolean
+    unread_count?: number
+    is_unread?: boolean
 }
 
 export default function InboxScreen() {
@@ -64,49 +75,59 @@ export default function InboxScreen() {
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
-          const runSearch = async () => {
-            if (search.trim().length > 2) {
-              const results = await searchUsersByEmail(search)
-              setSearchResults(results)
-            } else {
-              setSearchResults([])
+            const runSearch = async () => {
+                if (search.trim().length > 2) {
+                    const results = await searchUsersByEmail(search)
+                    setSearchResults(results)
+                } else {
+                    setSearchResults([])
+                }
             }
-          }
-          runSearch()
+            runSearch()
         }, 300)
-      
+
         return () => clearTimeout(delayDebounce)
-      }, [search])
+    }, [search])
+
+    const loadMessages = useCallback(async () => {
+        if (!user?.id) return
+
+        const data = await fetchLatestMessagesForUser(user.id)
+
+        const mappedMessages = data.map((msg: any) => ({
+            id: msg.id,
+            title: msg.first_name + ' ' + msg.last_name,
+            content: msg.content,
+            timestamp: msg.created_at,
+            read: !msg.is_unread,
+            sender: msg.first_name,
+            profile_url: msg.profile_url,
+            otherUserId: msg.sender_id === user.id ? msg.recipient_id : msg.sender_id,
+            first_name: msg.first_name,
+            last_name: msg.last_name,
+            isFromMe: msg.sender_id === user.id,
+            unread_count: msg.unread_count || 0,
+            is_unread: msg.is_unread || false,
+        }))
+
+        setMessages(mappedMessages)
+    }, [user])
+
+    const { refreshControl } = useRefreshableScroll(loadMessages)
 
     useEffect(() => {
-        const mockMessages: Message[] = [
-            {
-                id: '1',
-                title: 'Welcome to CM Mobile Stack',
-                content: 'Thank you for joining our platform.',
-                timestamp: new Date().toISOString(),
-                read: false,
-                sender: 'System',
-            },
-            {
-                id: '2',
-                title: 'Profile Update Required',
-                content: 'Please complete your profile.',
-                timestamp: new Date(Date.now() - 86400000).toISOString(),
-                read: true,
-                sender: 'Support',
-            },
-            {
-                id: '3',
-                title: 'New Feature Available',
-                content: 'Check out the latest updates.',
-                timestamp: new Date(Date.now() - 172800000).toISOString(),
-                read: true,
-                sender: 'Updates',
-            },
-        ]
-        setMessages(mockMessages)
-    }, [])
+        loadMessages()
+    }, [loadMessages])
+
+    // Refresh messages when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            // Small delay to ensure navigation is complete
+            setTimeout(() => {
+                loadMessages()
+            }, 100)
+        }, [loadMessages])
+    )
 
     const today = format(new Date(), 'EEEE, MMM d')
 
@@ -125,141 +146,176 @@ export default function InboxScreen() {
                 {
                     backgroundColor: theme.colors.card,
                     borderColor: theme.colors.border,
-                    opacity: item.read ? 0.7 : 1,
                 },
             ]}
-            onPress={() => console.log('Message tapped:', item.id)}
+            onPress={() => navigation.navigate('MessageThread', { userId: item.otherUserId })}
+            activeOpacity={0.7}
         >
-            <View style={styles.messageHeader}>
-                <ThemedText style={[styles.messageTitle, { color: theme.colors.text }]}>
-                    {item.title}
-                </ThemedText>
-                {!item.read && (
-                    <View style={[styles.unreadDot, { backgroundColor: theme.colors.primary }]} />
-                )}
-            </View>
-            <ThemedText
-                style={[styles.messageContent, { color: theme.colors.mutedText }]}
-                numberOfLines={2}
-            >
-                {item.content}
-            </ThemedText>
-            <View style={styles.messageFooter}>
-                <ThemedText style={[styles.messageSender, { color: theme.colors.mutedText }]}>
-                    {item.sender}
-                </ThemedText>
-                <ThemedText style={[styles.messageTime, { color: theme.colors.mutedText }]}>
-                    {format(new Date(item.timestamp), 'MMM d, h:mm a')}
-                </ThemedText>
+            <View style={styles.messageRow}>
+                {/* Avatar with Badge Overlay */}
+                <View style={styles.avatarContainer}>
+                    {item.profile_url ? (
+                        <ThemedImage source={{ uri: item.profile_url }} style={styles.messageAvatar} cacheKey={item.profile_url} />
+                    ) : (
+                        <View style={[styles.messageAvatar, { backgroundColor: theme.colors.primary + '22', justifyContent: 'center', alignItems: 'center' }]}>
+                            <ThemedText style={[styles.avatarInitials, { color: theme.colors.primary }]}>
+                                {item.first_name?.[0]}{item.last_name?.[0]}
+                            </ThemedText>
+                        </View>
+                    )}
+
+                    {/* Unread Badge - positioned as overlay on avatar */}
+                    {(item.unread_count || 0) > 0 && (
+                        <View style={[styles.unreadBadge, { backgroundColor: '#FF3B30' }]}>
+                            <ThemedText style={styles.unreadBadgeText}>
+                                {(item.unread_count || 0) > 9 ? '9+' : item.unread_count}
+                            </ThemedText>
+                        </View>
+                    )}
+                </View>
+
+                {/* Message Content */}
+                <View style={styles.messageContent}>
+                    <View style={styles.messageHeader}>
+                        <ThemedText style={[
+                            styles.messageName,
+                            {
+                                color: theme.colors.text,
+                                fontWeight: (item.unread_count || 0) > 0 ? '700' : '600'
+                            }
+                        ]}>
+                            {item.title}
+                        </ThemedText>
+                        <ThemedText style={[styles.messageTime, { color: theme.colors.mutedText }]}>
+                            {format(new Date(item.timestamp), 'h:mm a')}
+                        </ThemedText>
+                    </View>
+                    <ThemedText
+                        style={[
+                            styles.messagePreview,
+                            {
+                                color: (item.unread_count || 0) > 0 ? theme.colors.text : theme.colors.mutedText,
+                                fontWeight: (item.unread_count || 0) > 0 ? '500' : '400'
+                            }
+                        ]}
+                        numberOfLines={1}
+                    >
+                        {item.isFromMe ? 'You: ' : `${item.first_name}: `}{item.content}
+                    </ThemedText>
+                </View>
             </View>
         </ThemedTouchableOpacity>
     )
 
     return (
         <ThemedView style={styles.root}>
-            <ThemedView style={[styles.header, { borderColor: theme.colors.border }]}>
-                <ThemedView style={styles.userInfo}>
-                    <ThemedText style={styles.greeting}>Inbox</ThemedText>
-                    <ThemedText style={styles.date}>{today}</ThemedText>
-                </ThemedView>
-                {profileUrl && (
-                    <ThemedTouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                        <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} />
-                    </ThemedTouchableOpacity>
-                )}
+          {/* Header stays fixed */}
+          <ThemedView style={[styles.header, { borderColor: theme.colors.border }]}>
+            <ThemedView style={styles.userInfo}>
+              <ThemedText style={styles.greeting}>Inbox</ThemedText>
+              <ThemedText style={styles.date}>{today}</ThemedText>
             </ThemedView>
-
-            {/* 🔍 Search Section */}
+            {profileUrl && (
+              <ThemedTouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} cacheKey={profileUrl} />
+              </ThemedTouchableOpacity>
+            )}
+          </ThemedView>
+      
+          {/* Whole screen pulls down */}
+          <ScrollView
+            refreshControl={refreshControl}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Search */}
             <View style={styles.searchSection}>
-                <View style={[
-                    styles.searchContainer,
-                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-                    searchResults.length > 0
-                        ? { borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
-                        : { borderRadius: 12 }
-                ]}>
-                    <ThemedIcon
-                        type="feather"
-                        name="search"
-                        size={16}
+              <View style={[
+                styles.searchContainer,
+                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                searchResults.length > 0
+                  ? { borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
+                  : { borderRadius: 12 }
+              ]}>
+                <ThemedIcon
+                  type="feather"
+                  name="search"
+                  size={16}
+                  color={theme.colors.mutedText}
+                  style={styles.searchIcon}
+                />
+                <TextInput
+                  placeholder="Search by email"
+                  placeholderTextColor={theme.colors.mutedText}
+                  value={search}
+                  onChangeText={setSearch}
+                  style={[styles.searchInput, { color: theme.colors.text }]}
+                />
+              </View>
+      
+              {searchResults.length > 0 && (
+                <View style={[styles.searchResultsCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                  <ThemedText style={[styles.searchResultsTitle, { color: theme.colors.text }]}>
+                    Search Results ({searchResults.length})
+                  </ThemedText>
+                  {searchResults.map((user, index) => (
+                    <ThemedTouchableOpacity
+                      key={user.id}
+                      onPress={() => navigation.navigate('MessageThread', { userId: user.id })}
+                      style={[
+                        styles.searchResultItem,
+                        index === searchResults.length - 1 && { borderBottomWidth: 0 }
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.searchResultAvatar}>
+                        {user.profile_url ? (
+                          <ThemedImage source={{ uri: user.profile_url }} style={styles.searchResultAvatarImage} cacheKey={user.profile_url} />
+                        ) : (
+                          <View style={[styles.searchResultInitials, { backgroundColor: theme.colors.primary + '20' }]}>
+                            <ThemedText style={[styles.searchResultInitialsText, { color: theme.colors.primary }]}>
+                              {user.first_name?.[0]}{user.last_name?.[0]}
+                            </ThemedText>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.searchResultContent}>
+                        <ThemedText style={[styles.searchResultName, { color: theme.colors.text }]}>
+                          {user.first_name} {user.last_name}
+                        </ThemedText>
+                        <ThemedText style={[styles.searchResultEmail, { color: theme.colors.mutedText }]}>
+                          {user.email}
+                        </ThemedText>
+                      </View>
+                      <ThemedIcon
+                        type="ionicons"
+                        name="chatbubble-outline"
+                        size={20}
                         color={theme.colors.mutedText}
-                        style={styles.searchIcon}
-                    />
-                    <TextInput
-                        placeholder="Search by email"
-                        placeholderTextColor={theme.colors.mutedText}
-                        value={search}
-                        onChangeText={setSearch}
-                        style={[styles.searchInput, { color: theme.colors.text }]}
-                    />
+                      />
+                    </ThemedTouchableOpacity>
+                  ))}
                 </View>
-                
-                {searchResults.length > 0 && (
-                    <View style={[styles.searchResultsCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-                        <ThemedText style={[styles.searchResultsTitle, { color: theme.colors.text }]}>
-                            Search Results ({searchResults.length})
-                        </ThemedText>
-                        {searchResults.map((user, index) => (
-                            <ThemedTouchableOpacity
-                                key={user.id}
-                                onPress={() => {
-                                    console.log('Tapped user:', user)
-                                    // Later: navigate to chat or profile
-                                }}
-                                style={[
-                                    styles.searchResultItem,
-                                    index === searchResults.length - 1 && { borderBottomWidth: 0 }
-                                ]}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.searchResultAvatar}>
-                                    {user.profile_url ? (
-                                        <ThemedImage 
-                                            source={{ uri: user.profile_url }} 
-                                            style={styles.searchResultAvatarImage}
-                                        />
-                                    ) : (
-                                        <View style={[styles.searchResultInitials, { backgroundColor: theme.colors.primary + '20' }]}>
-                                            <ThemedText style={[styles.searchResultInitialsText, { color: theme.colors.primary }]}>
-                                                {user.first_name?.[0]}{user.last_name?.[0]}
-                                            </ThemedText>
-                                        </View>
-                                    )}
-                                </View>
-                                <View style={styles.searchResultContent}>
-                                    <ThemedText style={[styles.searchResultName, { color: theme.colors.text }]}>
-                                        {user.first_name} {user.last_name}
-                                    </ThemedText>
-                                    <ThemedText style={[styles.searchResultEmail, { color: theme.colors.mutedText }]}>
-                                        {user.email}
-                                    </ThemedText>
-                                </View>
-                                <ThemedIcon 
-                                    type="ionicons" 
-                                    name="chatbubble-outline" 
-                                    size={20} 
-                                    color={theme.colors.mutedText} 
-                                />
-                            </ThemedTouchableOpacity>
-                        ))}
-                    </View>
-                )}
+              )}
             </View>
-
-            <FlatList
-                data={messages}
-                renderItem={renderMessage}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.messageList}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <ThemedView style={styles.emptyState}>
-                        <ThemedText style={[styles.emptyText, { color: theme.colors.mutedText }]}>
-                            No messages yet
-                        </ThemedText>
-                    </ThemedView>
-                }
-            />
+      
+            {/* Messages */}
+            <View style={styles.messageList}>
+              {messages.length === 0 ? (
+                <ThemedView style={styles.emptyState}>
+                  <ThemedText style={[styles.emptyText, { color: theme.colors.mutedText }]}>
+                    No messages yet
+                  </ThemedText>
+                </ThemedView>
+              ) : (
+                messages.map((item) => (
+                  <View key={item.id}>
+                    {renderMessage({ item })}
+                  </View>
+                ))
+              )}
+            </View>
+          </ScrollView>
         </ThemedView>
     )
 }
@@ -310,36 +366,95 @@ const styles = StyleSheet.create({
         paddingTop: 12,
     },
     messageList: {
-        padding: 24,
-        paddingTop: 12,
+        paddingHorizontal: 24,
+        // paddingTop: 12,
+        paddingBottom: 24,
     },
     messageItem: {
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        marginBottom: 8,
+        borderRadius: 16,
         borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    messageRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    avatarContainer: {
+        width: 48,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    messageAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#eee',
+    },
+    avatarInitials: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    messageContent: {
+        flex: 1,
+        justifyContent: 'center',
     },
     messageHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
-    messageTitle: {
+    messageName: {
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
         flex: 1,
     },
-    unreadDot: {
+    messageTime: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    messagePreview: {
+        fontSize: 14,
+        fontWeight: '400',
+        lineHeight: 18,
+    },
+    unreadIndicator: {
         width: 8,
         height: 8,
         borderRadius: 4,
         marginLeft: 8,
     },
-    messageContent: {
-        fontSize: 14,
-        lineHeight: 20,
-        marginBottom: 12,
+    unreadBadge: {
+        position: 'absolute',
+        top: -3,
+        right: -3,
+        minWidth: 22,
+        height: 22,
+        borderRadius: 11,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 6,
+        borderWidth: 2,
+        borderColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 3,
+    },
+    unreadBadgeText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '700',
+        lineHeight: 16,
     },
     messageFooter: {
         flexDirection: 'row',
@@ -349,9 +464,6 @@ const styles = StyleSheet.create({
     messageSender: {
         fontSize: 12,
         fontWeight: '500',
-    },
-    messageTime: {
-        fontSize: 12,
     },
     emptyState: {
         flex: 1,

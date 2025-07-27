@@ -18,6 +18,7 @@ import {
   ThemedTouchableOpacity,
 } from '../components/themed'
 import { useTheme } from '../context/themeContext'
+import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
 
 type Event = {
   id: string
@@ -36,22 +37,24 @@ export default function CalendarScreen() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return
-      const { data } = await supabase
-        .from('users')
-        .select('first_name, profile_url')
-        .eq('id', user.id)
-        .single()
+  const fetchUserData = async () => {
+    if (!user) return
+    const { data } = await supabase
+      .from('users')
+      .select('first_name, profile_url')
+      .eq('id', user.id)
+      .single()
 
-      if (data) {
-        setFirstName(data.first_name)
-        setProfileUrl(data.profile_url)
-      }
-      setLoading(false)
+    if (data) {
+      setFirstName(data.first_name)
+      setProfileUrl(data.profile_url)
     }
+    setLoading(false)
+  }
 
+  const { refreshControl } = useRefreshableScroll(fetchUserData)
+
+  useEffect(() => {
     fetchUserData()
   }, [user])
 
@@ -112,12 +115,12 @@ export default function CalendarScreen() {
         </ThemedView>
         {profileUrl && (
           <ThemedTouchableOpacity onPress={() => navigation.navigate('Profile')}>
-            <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} />
+            <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} cacheKey={profileUrl} />
           </ThemedTouchableOpacity>
         )}
       </ThemedView>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView refreshControl={refreshControl} style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Month Header */}
         <View style={styles.monthHeader}>
           <ThemedTouchableOpacity onPress={() => {

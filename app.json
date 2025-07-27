@@ -3,8 +3,10 @@
     "name": "cm-mobile-stack",
     "slug": "cm-mobile-stack",
     "scheme": "dogstack",
-    "deepLinks": ["dogstack://"],
-    "version": "1.0.0",
+    "deepLinks": [
+      "dogstack://"
+    ],
+    "version": "0.0.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -25,7 +27,8 @@
       "statusBar": {
         "translucent": false,
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.mcnamaracharles.cmmobilestack"
     },
     "androidNavigationBar": {
       "barStyle": "dark-content",
@@ -34,6 +37,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "environment": "development",
+      "eas": {
+        "projectId": "05380a06-224a-408e-8289-5dd1653c88da"
+      }
     }
   }
 }

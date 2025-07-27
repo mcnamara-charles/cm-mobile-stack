@@ -97,7 +97,7 @@ export default function HelpCenterScreen() {
               ]}
               activeOpacity={0.7}
             >
-              <ThemedIcon type={category.icon.type} name={category.icon.name} size={24} color={theme.colors.primary} style={styles.helpIcon} />
+              <ThemedIcon type={category.icon.type as 'feather' | 'ionicons' | 'fontawesome'} name={category.icon.name} size={24} color={theme.colors.primary} style={styles.helpIcon} />
               <View style={styles.helpContent}>
                 <ThemedText style={[styles.helpTitle, { color: theme.colors.text }]}>{category.title}</ThemedText>
                 <ThemedText style={[styles.helpDescription, { color: theme.colors.mutedText }]}>{category.description}</ThemedText>

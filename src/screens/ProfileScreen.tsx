@@ -1,3 +1,4 @@
+import React from 'react'
 import { useEffect, useState } from 'react'
 import {
     StyleSheet,
@@ -8,8 +9,11 @@ import {
     ActivityIndicator,
     Alert,
     View,
+    Modal,
+    Pressable,
+    Dimensions,
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { ThemedIcon } from '../components/themed'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
@@ -19,6 +23,9 @@ import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
 import { ThemedView, ThemedText } from '../components/themed'
+import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 export default function ProfileScreen() {
     const navigation = useNavigation()
@@ -29,32 +36,40 @@ export default function ProfileScreen() {
         first_name: string
         last_name: string
         profile_url: string
-        address: string
         headline?: string
         banner_url?: string
+        bio?: string
+        email?: string
+        phone?: string
     } | null>(null)
     const [loading, setLoading] = useState(true)
+    const [showLightbox, setShowLightbox] = useState(false)
+    const [lightboxImageError, setLightboxImageError] = useState(false)
+    const [lightboxImageUrl, setLightboxImageUrl] = useState<string>('')
+    const [lightboxImageType, setLightboxImageType] = useState<'profile' | 'banner'>('profile')
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            if (!user) return
-
-            const { data, error } = await supabase
-                .from('users')
-                .select('first_name, last_name, profile_url, address, headline, banner_url')
-                .eq('id', user.id)
-                .single()
-
-            if (error) {
-                console.error('Error fetching profile:', error)
-            } else {
-                setProfile(data)
-            }
-            setLoading(false)
+    const fetchProfile = async () => {
+        if (!user) return
+        const { data, error } = await supabase
+            .from('users')
+            .select('first_name, last_name, profile_url, headline, banner_url, email, phone, bio')
+            .eq('id', user.id)
+            .single()
+        if (error) {
+            console.error('Error fetching profile:', error)
+        } else {
+            setProfile(data)
         }
+        setLoading(false)
+    }
 
-        fetchProfile()
-    }, [user])
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchProfile()
+        }, [user])
+    )
+
+    const { refreshControl } = useRefreshableScroll(fetchProfile)
 
     const uploadBannerImage = async () => {
         if (!user) return
@@ -98,7 +113,7 @@ export default function ProfileScreen() {
                 .getPublicUrl(fileName)
 
             if (!publicUrlData?.publicUrl) {
-                throw new Error('Could not retrieve public URL')
+                throw new Error('Failed to get public URL')
             }
 
             const { error: updateError } = await supabase
@@ -106,62 +121,102 @@ export default function ProfileScreen() {
                 .update({ banner_url: publicUrlData.publicUrl })
                 .eq('id', user.id)
 
-            if (updateError) throw updateError
+            if (updateError) {
+                throw updateError
+            }
 
-            setProfile(prev => prev ? { ...prev, banner_url: publicUrlData.publicUrl } : prev)
-        } catch (err: any) {
-            Alert.alert('Banner Upload Failed', err.message || 'Try again later.')
+            // Refresh profile data
+            const { data: updatedProfile } = await supabase
+                .from('users')
+                .select('banner_url')
+                .eq('id', user.id)
+                .single()
+
+            if (updatedProfile) {
+                setProfile(prev => prev ? { ...prev, banner_url: updatedProfile.banner_url } : null)
+            }
+
+        } catch (error) {
+            console.error('Error uploading banner:', error)
+            Alert.alert('Error', 'Failed to upload banner image')
         }
-    }
-
-    if (!user) {
-        return (
-            <ThemedView style={styles.loadingContainer}>
-                <ThemedText style={{ color: theme.colors.mutedText }}>You're not logged in.</ThemedText>
-            </ThemedView>
-        )
     }
 
     if (loading) {
         return (
-            <ThemedView style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.mutedText} />
+            <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
             </ThemedView>
         )
     }
 
     if (!profile) {
         return (
-            <ThemedView style={styles.loadingContainer}>
-                <ThemedText style={{ color: theme.colors.mutedText }}>No profile found.</ThemedText>
+            <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+                <View style={styles.loadingContainer}>
+                    <ThemedText style={[styles.errorText, { color: theme.colors.text }]}>
+                        Profile not found
+                    </ThemedText>
+                </View>
             </ThemedView>
         )
     }
 
-    const name = `${profile.first_name} ${profile.last_name[0]}.`
+    const name = `${profile.first_name} ${profile.last_name}`
+
+    // Debug: Log the profile URL to see if it's valid
+    console.log('Profile URL for lightbox:', profile.profile_url)
 
     return (
-        <ScrollView style={[styles.root, { backgroundColor: theme.colors.background }]} contentContainerStyle={{ paddingBottom: 60 }}>
-            <ThemedView>
-                <View style={[styles.header, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <ThemedIcon type="ionicons" name="arrow-back" size={24} color={theme.colors.text} />
+        <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+            <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View style={[styles.header, {
+                    backgroundColor: theme.colors.background,
+                    borderBottomColor: theme.colors.border
+                }]}>
+                    <TouchableOpacity 
+                        onPress={() => navigation.goBack()}
+                        style={[styles.backButton, { backgroundColor: theme.colors.card }]}
+                        activeOpacity={0.7}
+                    >
+                        <ThemedIcon 
+                            type="ionicons" 
+                            name="arrow-back" 
+                            size={20} 
+                            color={theme.colors.text} 
+                        />
                     </TouchableOpacity>
                     <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>{name}</ThemedText>
-                    <TouchableOpacity>
-                        <ThemedIcon type="feather" name="edit-2" size={20} color={theme.colors.text} />
+                    <TouchableOpacity 
+                        style={[styles.editButton, { backgroundColor: theme.colors.card }]} 
+                        activeOpacity={0.7}
+                        onPress={() => (navigation as any).navigate('EditProfile')}
+                    >
+                        <ThemedIcon type="feather" name="edit-2" size={18} color={theme.colors.text} />
                     </TouchableOpacity>
                 </View>
 
                 {profile.banner_url ? (
-                    <View style={styles.bannerWrapper}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setLightboxImageUrl(profile.banner_url || '')
+                            setLightboxImageType('banner')
+                            setShowLightbox(true)
+                            setLightboxImageError(false)
+                        }}
+                        activeOpacity={0.8}
+                        style={styles.bannerWrapper}
+                    >
                         <Image
-                            source={{ uri: profile.banner_url }}
+                            source={{ uri: profile.banner_url || undefined }}
                             style={styles.bannerImage}
                             resizeMode="cover"
                             onError={(e) => console.warn('Banner image load error:', e.nativeEvent.error)}
                         />
-                    </View>
+                    </TouchableOpacity>
                 ) : (
                     <TouchableOpacity style={[styles.bannerPlaceholder, { backgroundColor: theme.colors.card }]} onPress={uploadBannerImage}>
                         <ThemedIcon type="feather" name="image" size={20} color={theme.colors.mutedText} />
@@ -170,20 +225,229 @@ export default function ProfileScreen() {
                 )}
 
                 <View style={styles.profileWrapper}>
-                    <Image
-                        source={{ uri: profile.profile_url }}
-                        style={[styles.avatar, { borderColor: theme.colors.background }]}
-                    />
+                    <TouchableOpacity
+                        onPress={() => {
+                            setLightboxImageUrl(profile.profile_url || '')
+                            setLightboxImageType('profile')
+                            setShowLightbox(true)
+                            setLightboxImageError(false)
+                        }}
+                        activeOpacity={0.8}
+                        style={styles.avatarContainer}
+                    >
+                        <Image
+                            source={{ uri: profile.profile_url || undefined }}
+                            style={[styles.avatar, { borderColor: theme.colors.background }]}
+                        />
+                        <View style={[styles.avatarOverlay, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+                            <ThemedIcon type="ionicons" name="camera" size={20} color="#fff" />
+                        </View>
+                    </TouchableOpacity>
                     <View style={styles.info}>
                         <ThemedText style={[styles.name, { color: theme.colors.text }]}>{name}</ThemedText>
-                        <ThemedText style={[styles.address, { color: theme.colors.mutedText }]}>{profile.address}</ThemedText>
                         {profile.headline ? (
                             <ThemedText style={[styles.headline, { color: theme.colors.mutedText }]}>{profile.headline}</ThemedText>
                         ) : null}
                     </View>
                 </View>
-            </ThemedView>
-        </ScrollView>
+
+                {/* Bio Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>About</ThemedText>
+                        <TouchableOpacity style={[styles.editIconButton, { backgroundColor: theme.colors.card }]} activeOpacity={0.7}>
+                            <ThemedIcon type="feather" name="edit-2" size={14} color={theme.colors.primary} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={[styles.bioCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                        {profile.bio ? (
+                            <ThemedText style={[styles.bioText, { color: theme.colors.text }]}>{profile.bio}</ThemedText>
+                        ) : (
+                            <TouchableOpacity style={styles.addBioButton} activeOpacity={0.7}>
+                                <ThemedIcon type="feather" name="plus" size={16} color={theme.colors.primary} />
+                                <ThemedText style={[styles.addBioText, { color: theme.colors.primary }]}>Add a bio</ThemedText>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+
+                {/* Contact Information */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact</ThemedText>
+                        <TouchableOpacity style={[styles.editIconButton, { backgroundColor: theme.colors.card }]} activeOpacity={0.7}>
+                            <ThemedIcon type="feather" name="edit-2" size={14} color={theme.colors.primary} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={[styles.contactCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                        <View style={styles.contactItem}>
+                            <View style={[styles.contactIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+                                <ThemedIcon type="ionicons" name="mail-outline" size={18} color={theme.colors.primary} />
+                            </View>
+                            <View style={styles.contactInfo}>
+                                <ThemedText style={[styles.contactLabel, { color: theme.colors.mutedText }]}>Email</ThemedText>
+                                <ThemedText style={[styles.contactValue, { color: theme.colors.text }]}>{profile.email || user?.email || 'Not provided'}</ThemedText>
+                            </View>
+                        </View>
+                        <View style={[styles.contactItem, { marginBottom: 0 }]}>
+                            <View style={[styles.contactIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+                                <ThemedIcon type="ionicons" name="call-outline" size={18} color={theme.colors.primary} />
+                            </View>
+                            <View style={styles.contactInfo}>
+                                <ThemedText style={[styles.contactLabel, { color: theme.colors.mutedText }]}>Phone</ThemedText>
+                                <ThemedText style={[styles.contactValue, { color: theme.colors.text }]}>{profile.phone || 'Not provided'}</ThemedText>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Friends Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>Friends</ThemedText>
+                        <TouchableOpacity style={[styles.seeAllButton, { backgroundColor: theme.colors.card }]} activeOpacity={0.7}>
+                            <ThemedText style={[styles.seeAllText, { color: theme.colors.primary }]}>See All</ThemedText>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={[styles.friendsCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                        <View style={styles.friendsHeader}>
+                            <View style={styles.friendCount}>
+                                <ThemedText style={[styles.friendCountNumber, { color: theme.colors.primary }]}>12</ThemedText>
+                                <ThemedText style={[styles.friendCountLabel, { color: theme.colors.mutedText }]}>Friends</ThemedText>
+                            </View>
+                            <TouchableOpacity style={[styles.addFriendButton, { backgroundColor: theme.colors.primary }]} activeOpacity={0.7}>
+                                <ThemedIcon type="ionicons" name="person-add-outline" size={16} color="#fff" />
+                                <ThemedText style={styles.addFriendText}>Add</ThemedText>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.recentFriends}>
+                            <ThemedText style={[styles.recentFriendsTitle, { color: theme.colors.mutedText }]}>Recent</ThemedText>
+                            <View style={styles.friendsList}>
+                                <View style={styles.friendItem}>
+                                    <View style={styles.friendAvatarContainer}>
+                                        <Image 
+                                            source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face' }}
+                                            style={styles.friendAvatar}
+                                        />
+                                        <View style={[styles.onlineIndicator, { backgroundColor: '#4CAF50' }]} />
+                                    </View>
+                                    <View style={styles.friendInfo}>
+                                        <ThemedText style={[styles.friendName, { color: theme.colors.text }]}>Sarah Chen</ThemedText>
+                                        <ThemedText style={[styles.friendStatus, { color: theme.colors.mutedText }]}>Online</ThemedText>
+                                    </View>
+                                </View>
+                                <View style={styles.friendItem}>
+                                    <View style={styles.friendAvatarContainer}>
+                                        <Image 
+                                            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face' }}
+                                            style={styles.friendAvatar}
+                                        />
+                                    </View>
+                                    <View style={styles.friendInfo}>
+                                        <ThemedText style={[styles.friendName, { color: theme.colors.text }]}>Mike Johnson</ThemedText>
+                                        <ThemedText style={[styles.friendStatus, { color: theme.colors.mutedText }]}>Last seen 2h ago</ThemedText>
+                                    </View>
+                                </View>
+                                <View style={styles.friendItem}>
+                                    <View style={styles.friendAvatarContainer}>
+                                        <Image 
+                                            source={{ uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face' }}
+                                            style={styles.friendAvatar}
+                                        />
+                                    </View>
+                                    <View style={styles.friendInfo}>
+                                        <ThemedText style={[styles.friendName, { color: theme.colors.text }]}>Emma Davis</ThemedText>
+                                        <ThemedText style={[styles.friendStatus, { color: theme.colors.mutedText }]}>Last seen 1d ago</ThemedText>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Quick Actions */}
+                <View style={styles.section}>
+                    <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</ThemedText>
+                    <View style={styles.quickActionsGrid}>
+                        <TouchableOpacity style={[styles.quickActionCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} activeOpacity={0.7}>
+                            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+                                <ThemedIcon type="ionicons" name="share-outline" size={20} color={theme.colors.primary} />
+                            </View>
+                            <ThemedText style={[styles.quickActionText, { color: theme.colors.text }]}>Share Profile</ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.quickActionCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]} activeOpacity={0.7}>
+                            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+                                <ThemedIcon type="ionicons" name="qr-code-outline" size={20} color={theme.colors.primary} />
+                            </View>
+                            <ThemedText style={[styles.quickActionText, { color: theme.colors.text }]}>QR Code</ThemedText>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Statistics */}
+                <View style={styles.section}>
+                    <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>Activity</ThemedText>
+                    <View style={styles.statsGrid}>
+                        <View style={[styles.statCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                            <ThemedText style={[styles.statNumber, { color: theme.colors.primary }]}>127</ThemedText>
+                            <ThemedText style={[styles.statLabel, { color: theme.colors.mutedText }]}>Messages</ThemedText>
+                        </View>
+                        <View style={[styles.statCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                            <ThemedText style={[styles.statNumber, { color: theme.colors.primary }]}>12</ThemedText>
+                            <ThemedText style={[styles.statLabel, { color: theme.colors.mutedText }]}>Friends</ThemedText>
+                        </View>
+                        <View style={[styles.statCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                            <ThemedText style={[styles.statNumber, { color: theme.colors.primary }]}>15</ThemedText>
+                            <ThemedText style={[styles.statLabel, { color: theme.colors.mutedText }]}>Days Active</ThemedText>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Bottom Spacing */}
+                <View style={{ height: 100 }} />
+            </ScrollView>
+
+            {/* Profile Picture Lightbox */}
+            <Modal
+                visible={showLightbox}
+                transparent
+                animationType="fade"
+                statusBarTranslucent
+            >
+                <Pressable
+                    style={styles.lightboxOverlay}
+                    onPress={() => setShowLightbox(false)}
+                >
+                    <View style={[styles.lightboxContent, { overflow: 'visible' }]}>
+                        <View style={styles.lightboxImageContainer}>
+                            <Image
+                                key={`lightbox-${lightboxImageUrl}`}
+                                source={{ uri: lightboxImageUrl }}
+                                style={styles.lightboxImage}
+                                resizeMode="contain"
+                                onLoad={() => console.log('Lightbox image loaded')}
+                                onError={(e) =>
+                                    console.error('Lightbox image failed to load:', e.nativeEvent.error)
+                                }
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.closeButton, { backgroundColor: theme.colors.card }]}
+                            onPress={() => setShowLightbox(false)}
+                            activeOpacity={0.8}
+                        >
+                            <ThemedIcon
+                                type="ionicons"
+                                name="close"
+                                size={24}
+                                color={theme.colors.text}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Modal>
+        </ThemedView>
     )
 }
 
@@ -195,6 +459,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        fontWeight: '500',
     },
     header: {
         paddingTop: 20,
@@ -222,10 +490,42 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 16,
     },
+    backButton: {
+        padding: 8,
+        marginRight: 8,
+        borderRadius: 20,
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    editButton: {
+        padding: 8,
+        borderRadius: 20,
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     profileWrapper: {
         marginTop: -49,
         paddingHorizontal: 24,
         alignItems: 'flex-start',
+    },
+    avatarContainer: {
+        marginBottom: 8,
+        position: 'relative',
+    },
+    avatarOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+        opacity: 0,
     },
     avatar: {
         width: 96,
@@ -233,7 +533,6 @@ const styles = StyleSheet.create({
         borderRadius: 48,
         borderWidth: 2,
         borderColor: '#fff',
-        marginBottom: 8,
     },
     info: {
         alignItems: 'flex-start',
@@ -270,5 +569,253 @@ const styles = StyleSheet.create({
     bannerPrompt: {
         fontSize: 14,
         fontStyle: 'italic',
+    },
+    lightboxOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    lightboxContent: {
+        width: SCREEN_WIDTH * 0.9,
+        height: SCREEN_WIDTH * 0.9,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    lightboxImageContainer: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    lightboxImage: {
+        width: '100%',
+        height: '100%',
+    },
+    closeButton: {
+        position: 'absolute',
+        top: -60,
+        right: 0,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    section: {
+        paddingHorizontal: 24,
+        marginTop: 24,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    bioCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        minHeight: 80,
+    },
+    bioText: {
+        fontSize: 16,
+        lineHeight: 24,
+    },
+    addBioButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+        gap: 8,
+    },
+    addBioText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    editIconButton: {
+        padding: 6,
+        borderRadius: 16,
+        width: 28,
+        height: 28,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    contactCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    contactItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    contactIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    contactInfo: {
+        flex: 1,
+    },
+    contactLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginBottom: 2,
+    },
+    contactValue: {
+        fontSize: 16,
+        fontWeight: '400',
+    },
+    quickActionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+        marginTop: 8,
+    },
+    quickActionCard: {
+        width: '47%',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        gap: 12,
+    },
+    actionIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    quickActionText: {
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 8,
+    },
+    statCard: {
+        flex: 1,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+    },
+    statNumber: {
+        fontSize: 24,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    seeAllText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    seeAllButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    friendAvatarContainer: {
+        position: 'relative',
+        marginRight: 12,
+    },
+    onlineIndicator: {
+        position: 'absolute',
+        bottom: -2,
+        right: -2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 2.5,
+        borderColor: '#fff',
+    },
+    friendsCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    friendsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    friendCount: {
+        alignItems: 'center',
+    },
+    friendCountNumber: {
+        fontSize: 24,
+        fontWeight: '700',
+        marginBottom: 2,
+    },
+    friendCountLabel: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    addFriendButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+    },
+    addFriendText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    recentFriends: {
+        marginTop: 8,
+    },
+    recentFriendsTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 12,
+    },
+    friendsList: {
+        gap: 12,
+    },
+    friendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    friendAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
+    friendInfo: {
+        flex: 1,
+    },
+    friendName: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    friendStatus: {
+        fontSize: 14,
+        fontWeight: '400',
     },
 })

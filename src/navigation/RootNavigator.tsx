@@ -18,6 +18,9 @@ import PreferencesScreen from '../screens/PreferencesScreen'
 import SettingsScreen from '../screens/SettingsScreen'
 import HelpCenterScreen from '../screens/HelpCenterScreen'
 import LegalScreen from '../screens/LegalScreen'
+import MessageThreadScreen from '../screens/MessageThreadScreen'
+import UserProfileScreen from '../screens/UserProfileScreen'
+import EditProfileScreen from '../screens/EditProfileScreen'
 
 import { Feather, MaterialIcons, Entypo } from '@expo/vector-icons'
 import { ThemedIcon } from '../components/themed'
@@ -168,6 +171,32 @@ export default function RootNavigator() {
               name="Legal"
               component={LegalScreen}
               options={{
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="MessageThread"
+              component={MessageThreadScreen}
+              options={{
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="UserProfile"
+              component={UserProfileScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="EditProfile"
+              component={EditProfileScreen}
+              options={{
+                headerShown: false,
                 animation: 'slide_from_right',
                 gestureEnabled: true,
               }}
