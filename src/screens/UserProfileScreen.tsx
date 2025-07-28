@@ -18,8 +18,25 @@ import { supabase } from '../services/supabaseClient'
 import { useTheme } from '../context/themeContext'
 import { ThemedView, ThemedText } from '../components/themed'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
+import { AppHeader } from '../components/themed/AppHeader'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
+
+// Utility function to format phone numbers
+const formatPhoneNumber = (phone: string | null | undefined): string => {
+    if (!phone) return 'Not provided'
+    
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '')
+    
+    // Check if it's a valid 10-digit US phone number
+    if (cleaned.length === 10) {
+        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
+    }
+    
+    // If it doesn't match the expected format, return as is
+    return phone
+}
 
 export default function UserProfileScreen() {
     const navigation = useNavigation()
@@ -96,34 +113,17 @@ export default function UserProfileScreen() {
 
     return (
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+            <AppHeader title={name}>
+                <TouchableOpacity 
+                    style={[styles.messageButton, { backgroundColor: theme.colors.primary }]} 
+                    activeOpacity={0.7}
+                    onPress={() => (navigation as any).navigate('MessageThread', { userId: userId })}
+                >
+                    <ThemedIcon type="ionicons" name="chatbubble-outline" size={18} color="#fff" />
+                </TouchableOpacity>
+            </AppHeader>
+            
             <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false}>
-                {/* Header */}
-                <View style={[styles.header, { 
-                    backgroundColor: theme.colors.background,
-                    borderBottomColor: theme.colors.border 
-                }]}>
-                    <TouchableOpacity 
-                        onPress={() => navigation.goBack()}
-                        style={[styles.backButton, { backgroundColor: theme.colors.card }]}
-                        activeOpacity={0.7}
-                    >
-                        <ThemedIcon 
-                            type="ionicons" 
-                            name="arrow-back" 
-                            size={20} 
-                            color={theme.colors.text} 
-                        />
-                    </TouchableOpacity>
-                    <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>{name}</ThemedText>
-                    <TouchableOpacity 
-                        style={[styles.messageButton, { backgroundColor: theme.colors.primary }]} 
-                        activeOpacity={0.7}
-                        onPress={() => (navigation as any).navigate('MessageThread', { userId: userId })}
-                    >
-                        <ThemedIcon type="ionicons" name="chatbubble-outline" size={18} color="#fff" />
-                    </TouchableOpacity>
-                </View>
-
                 {/* Banner */}
                 {profile.banner_url ? (
                     <TouchableOpacity
@@ -222,7 +222,7 @@ export default function UserProfileScreen() {
                                 </View>
                                 <View style={styles.contactInfo}>
                                     <ThemedText style={[styles.contactLabel, { color: theme.colors.mutedText }]}>Phone</ThemedText>
-                                    <ThemedText style={[styles.contactValue, { color: theme.colors.text }]}>{profile.phone}</ThemedText>
+                                    <ThemedText style={[styles.contactValue, { color: theme.colors.text }]}>{formatPhoneNumber(profile.phone)}</ThemedText>
                                 </View>
                             </View>
                         )}

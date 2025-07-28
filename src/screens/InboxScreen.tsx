@@ -25,6 +25,7 @@ import { searchUsersByEmail } from '../services/api/users'
 import { fetchLatestMessagesForUser } from '../services/api/messages'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
 import { ScrollView } from 'react-native'
+import { AppHeader } from '../components/themed/AppHeader'
 
 
 type Message = {
@@ -209,113 +210,101 @@ export default function InboxScreen() {
 
     return (
         <ThemedView style={styles.root}>
-          {/* Header stays fixed */}
-          <ThemedView style={[styles.header, { borderColor: theme.colors.border }]}>
-            <ThemedView style={styles.userInfo}>
-              <ThemedText style={styles.greeting}>Inbox</ThemedText>
-              <ThemedText style={styles.date}>{today}</ThemedText>
-            </ThemedView>
-            {profileUrl && (
-              <ThemedTouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <ThemedImage source={{ uri: profileUrl }} style={styles.avatar} cacheKey={profileUrl} />
-              </ThemedTouchableOpacity>
-            )}
-          </ThemedView>
-      
-          {/* Whole screen pulls down */}
-          <ScrollView
-            refreshControl={refreshControl}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Search */}
-            <View style={styles.searchSection}>
-              <View style={[
-                styles.searchContainer,
-                { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-                searchResults.length > 0
-                  ? { borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
-                  : { borderRadius: 12 }
-              ]}>
-                <ThemedIcon
-                  type="feather"
-                  name="search"
-                  size={16}
-                  color={theme.colors.mutedText}
-                  style={styles.searchIcon}
-                />
-                <TextInput
-                  placeholder="Search by email"
-                  placeholderTextColor={theme.colors.mutedText}
-                  value={search}
-                  onChangeText={setSearch}
-                  style={[styles.searchInput, { color: theme.colors.text }]}
-                />
-              </View>
-      
-              {searchResults.length > 0 && (
-                <View style={[styles.searchResultsCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-                  <ThemedText style={[styles.searchResultsTitle, { color: theme.colors.text }]}>
-                    Search Results ({searchResults.length})
-                  </ThemedText>
-                  {searchResults.map((user, index) => (
-                    <ThemedTouchableOpacity
-                      key={user.id}
-                      onPress={() => navigation.navigate('MessageThread', { userId: user.id })}
-                      style={[
-                        styles.searchResultItem,
-                        index === searchResults.length - 1 && { borderBottomWidth: 0 }
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.searchResultAvatar}>
-                        {user.profile_url ? (
-                          <ThemedImage source={{ uri: user.profile_url }} style={styles.searchResultAvatarImage} cacheKey={user.profile_url} />
-                        ) : (
-                          <View style={[styles.searchResultInitials, { backgroundColor: theme.colors.primary + '20' }]}>
-                            <ThemedText style={[styles.searchResultInitialsText, { color: theme.colors.primary }]}>
-                              {user.first_name?.[0]}{user.last_name?.[0]}
+            <AppHeader title="Inbox" />
+            {/* Whole screen pulls down */}
+            <ScrollView
+                refreshControl={refreshControl}
+                contentContainerStyle={{ paddingBottom: 24 }}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Search */}
+                <View style={styles.searchSection}>
+                    <View style={[
+                        styles.searchContainer,
+                        { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                        searchResults.length > 0
+                            ? { borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
+                            : { borderRadius: 12 }
+                    ]}>
+                        <ThemedIcon
+                            type="feather"
+                            name="search"
+                            size={16}
+                            color={theme.colors.mutedText}
+                            style={styles.searchIcon}
+                        />
+                        <TextInput
+                            placeholder="Search Inbox"
+                            placeholderTextColor={theme.colors.mutedText}
+                            value={search}
+                            onChangeText={setSearch}
+                            style={[styles.searchInput, { color: theme.colors.text }]}
+                        />
+                    </View>
+
+                    {searchResults.length > 0 && (
+                        <View style={[styles.searchResultsCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+                            <ThemedText style={[styles.searchResultsTitle, { color: theme.colors.text }]}>
+                                Search Results ({searchResults.length})
                             </ThemedText>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.searchResultContent}>
-                        <ThemedText style={[styles.searchResultName, { color: theme.colors.text }]}>
-                          {user.first_name} {user.last_name}
-                        </ThemedText>
-                        <ThemedText style={[styles.searchResultEmail, { color: theme.colors.mutedText }]}>
-                          {user.email}
-                        </ThemedText>
-                      </View>
-                      <ThemedIcon
-                        type="ionicons"
-                        name="chatbubble-outline"
-                        size={20}
-                        color={theme.colors.mutedText}
-                      />
-                    </ThemedTouchableOpacity>
-                  ))}
+                            {searchResults.map((user, index) => (
+                                <ThemedTouchableOpacity
+                                    key={user.id}
+                                    onPress={() => navigation.navigate('MessageThread', { userId: user.id })}
+                                    style={[
+                                        styles.searchResultItem,
+                                        index === searchResults.length - 1 && { borderBottomWidth: 0 }
+                                    ]}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.searchResultAvatar}>
+                                        {user.profile_url ? (
+                                            <ThemedImage source={{ uri: user.profile_url }} style={styles.searchResultAvatarImage} cacheKey={user.profile_url} />
+                                        ) : (
+                                            <View style={[styles.searchResultInitials, { backgroundColor: theme.colors.primary + '20' }]}>
+                                                <ThemedText style={[styles.searchResultInitialsText, { color: theme.colors.primary }]}>
+                                                    {user.first_name?.[0]}{user.last_name?.[0]}
+                                                </ThemedText>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.searchResultContent}>
+                                        <ThemedText style={[styles.searchResultName, { color: theme.colors.text }]}>
+                                            {user.first_name} {user.last_name}
+                                        </ThemedText>
+                                        <ThemedText style={[styles.searchResultEmail, { color: theme.colors.mutedText }]}>
+                                            {user.email}
+                                        </ThemedText>
+                                    </View>
+                                    <ThemedIcon
+                                        type="ionicons"
+                                        name="chatbubble-outline"
+                                        size={20}
+                                        color={theme.colors.mutedText}
+                                    />
+                                </ThemedTouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
-              )}
-            </View>
-      
-            {/* Messages */}
-            <View style={styles.messageList}>
-              {messages.length === 0 ? (
-                <ThemedView style={styles.emptyState}>
-                  <ThemedText style={[styles.emptyText, { color: theme.colors.mutedText }]}>
-                    No messages yet
-                  </ThemedText>
-                </ThemedView>
-              ) : (
-                messages.map((item) => (
-                  <View key={item.id}>
-                    {renderMessage({ item })}
-                  </View>
-                ))
-              )}
-            </View>
-          </ScrollView>
+
+                {/* Messages */}
+                <View style={styles.messageList}>
+                    {messages.length === 0 ? (
+                        <ThemedView style={styles.emptyState}>
+                            <ThemedText style={[styles.emptyText, { color: theme.colors.mutedText }]}>
+                                No messages yet
+                            </ThemedText>
+                        </ThemedView>
+                    ) : (
+                        messages.map((item) => (
+                            <View key={item.id}>
+                                {renderMessage({ item })}
+                            </View>
+                        ))
+                    )}
+                </View>
+            </ScrollView>
         </ThemedView>
     )
 }
@@ -488,7 +477,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 8,
         borderWidth: 1,
     },
     searchIcon: {

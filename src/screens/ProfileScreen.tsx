@@ -24,8 +24,25 @@ import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
 import { ThemedView, ThemedText } from '../components/themed'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
+import { AppHeader } from '../components/themed/AppHeader'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
+
+// Utility function to format phone numbers
+const formatPhoneNumber = (phone: string | null | undefined): string => {
+    if (!phone) return 'Not provided'
+    
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '')
+    
+    // Check if it's a valid 10-digit US phone number
+    if (cleaned.length === 10) {
+        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
+    }
+    
+    // If it doesn't match the expected format, return as is
+    return phone
+}
 
 export default function ProfileScreen() {
     const navigation = useNavigation()
@@ -171,34 +188,17 @@ export default function ProfileScreen() {
 
     return (
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+            <AppHeader title={name}>
+                <TouchableOpacity 
+                    style={styles.headerButton} 
+                    activeOpacity={0.7}
+                    onPress={() => (navigation as any).navigate('EditProfile')}
+                >
+                    <ThemedIcon type="feather" name="edit-2" size={18} color={theme.colors.primary} />
+                </TouchableOpacity>
+            </AppHeader>
+            
             <ScrollView refreshControl={refreshControl} showsVerticalScrollIndicator={false}>
-                {/* Header */}
-                <View style={[styles.header, {
-                    backgroundColor: theme.colors.background,
-                    borderBottomColor: theme.colors.border
-                }]}>
-                    <TouchableOpacity 
-                        onPress={() => navigation.goBack()}
-                        style={[styles.backButton, { backgroundColor: theme.colors.card }]}
-                        activeOpacity={0.7}
-                    >
-                        <ThemedIcon 
-                            type="ionicons" 
-                            name="arrow-back" 
-                            size={20} 
-                            color={theme.colors.text} 
-                        />
-                    </TouchableOpacity>
-                    <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>{name}</ThemedText>
-                    <TouchableOpacity 
-                        style={[styles.editButton, { backgroundColor: theme.colors.card }]} 
-                        activeOpacity={0.7}
-                        onPress={() => (navigation as any).navigate('EditProfile')}
-                    >
-                        <ThemedIcon type="feather" name="edit-2" size={18} color={theme.colors.text} />
-                    </TouchableOpacity>
-                </View>
-
                 {profile.banner_url ? (
                     <TouchableOpacity
                         onPress={() => {
@@ -255,7 +255,11 @@ export default function ProfileScreen() {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>About</ThemedText>
-                        <TouchableOpacity style={[styles.editIconButton, { backgroundColor: theme.colors.card }]} activeOpacity={0.7}>
+                        <TouchableOpacity 
+                            style={[styles.editIconButton, { backgroundColor: theme.colors.card }]} 
+                            activeOpacity={0.7}
+                            onPress={() => (navigation as any).navigate('EditProfile', { focusBio: true })}
+                        >
                             <ThemedIcon type="feather" name="edit-2" size={14} color={theme.colors.primary} />
                         </TouchableOpacity>
                     </View>
@@ -263,7 +267,11 @@ export default function ProfileScreen() {
                         {profile.bio ? (
                             <ThemedText style={[styles.bioText, { color: theme.colors.text }]}>{profile.bio}</ThemedText>
                         ) : (
-                            <TouchableOpacity style={styles.addBioButton} activeOpacity={0.7}>
+                            <TouchableOpacity 
+                                style={styles.addBioButton} 
+                                activeOpacity={0.7}
+                                onPress={() => (navigation as any).navigate('EditProfile', { focusBio: true })}
+                            >
                                 <ThemedIcon type="feather" name="plus" size={16} color={theme.colors.primary} />
                                 <ThemedText style={[styles.addBioText, { color: theme.colors.primary }]}>Add a bio</ThemedText>
                             </TouchableOpacity>
@@ -275,7 +283,11 @@ export default function ProfileScreen() {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <ThemedText style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact</ThemedText>
-                        <TouchableOpacity style={[styles.editIconButton, { backgroundColor: theme.colors.card }]} activeOpacity={0.7}>
+                        <TouchableOpacity 
+                            style={[styles.editIconButton, { backgroundColor: theme.colors.card }]} 
+                            activeOpacity={0.7}
+                            onPress={() => (navigation as any).navigate('EditProfile', { focusContact: true })}
+                        >
                             <ThemedIcon type="feather" name="edit-2" size={14} color={theme.colors.primary} />
                         </TouchableOpacity>
                     </View>
@@ -295,7 +307,7 @@ export default function ProfileScreen() {
                             </View>
                             <View style={styles.contactInfo}>
                                 <ThemedText style={[styles.contactLabel, { color: theme.colors.mutedText }]}>Phone</ThemedText>
-                                <ThemedText style={[styles.contactValue, { color: theme.colors.text }]}>{profile.phone || 'Not provided'}</ThemedText>
+                                <ThemedText style={[styles.contactValue, { color: theme.colors.text }]}>{formatPhoneNumber(profile.phone)}</ThemedText>
                             </View>
                         </View>
                     </View>
@@ -817,5 +829,13 @@ const styles = StyleSheet.create({
     friendStatus: {
         fontSize: 14,
         fontWeight: '400',
+    },
+    headerButton: {
+        padding: 8,
+        borderRadius: 20,
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 })

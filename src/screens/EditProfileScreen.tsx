@@ -16,7 +16,6 @@ import {
 } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import React from 'react'
-import { ThemedIcon } from '../components/themed'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
 import { updateUserProfile } from '../services/api/users'
@@ -25,38 +24,19 @@ import * as ImageManipulator from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText } from '../components/themed'
+import { ThemedView, ThemedText, ThemedIcon } from '../components/themed'
+import { AppHeader } from '../components/themed/AppHeader'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
-export default function EditProfileScreen() {
+export default function EditProfileScreen({ route }: any) {
     const navigation = useNavigation()
     const { user } = useAuth()
     const { theme } = useTheme()
+    const scrollViewRef = React.useRef<ScrollView>(null)
+    const bioInputRef = React.useRef<TextInput>(null)
+    const phoneInputRef = React.useRef<TextInput>(null)
 
-    const [profile, setProfile] = useState<{
-        first_name: string
-        last_name: string
-        profile_url: string
-        address: string
-        headline?: string
-        banner_url?: string
-        bio?: string
-        email?: string
-        phone?: string
-    } | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
-    const [showLightbox, setShowLightbox] = useState(false)
-    const [lightboxImageError, setLightboxImageError] = useState(false)
-    const [lightboxImageUrl, setLightboxImageUrl] = useState<string>('')
-    const [lightboxImageType, setLightboxImageType] = useState<'profile' | 'banner'>('profile')
-
-    // Add state for selected profile and banner image URIs
-    const [selectedProfileImageUri, setSelectedProfileImageUri] = useState<string | null>(null)
-    const [selectedBannerImageUri, setSelectedBannerImageUri] = useState<string | null>(null)
-
-    // Form state
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
@@ -65,6 +45,7 @@ export default function EditProfileScreen() {
         bio: '',
         phone: '',
     })
+
     const [originalData, setOriginalData] = useState({
         first_name: '',
         last_name: '',
@@ -73,6 +54,47 @@ export default function EditProfileScreen() {
         bio: '',
         phone: '',
     })
+
+    const [profile, setProfileState] = useState<{
+        first_name: string
+        last_name: string
+        profile_url: string
+        address?: string
+        headline?: string
+        banner_url?: string
+        bio?: string
+        email?: string
+        phone?: string
+    } | null>(null)
+
+    const [selectedProfileImageUri, setSelectedProfileImageUri] = useState<string | null>(null)
+    const [selectedBannerImageUri, setSelectedBannerImageUri] = useState<string | null>(null)
+    const [uploading, setUploading] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [showLightbox, setShowLightbox] = useState(false)
+    const [lightboxImageUrl, setLightboxImageUrl] = useState<string>('')
+    const [lightboxImageType, setLightboxImageType] = useState<'profile' | 'banner'>('profile')
+
+    // Handle focusBio and focusContact parameters from navigation
+    React.useEffect(() => {
+        if (route.params?.focusBio) {
+            // Delay to ensure the screen is fully rendered
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true })
+                setTimeout(() => {
+                    bioInputRef.current?.focus()
+                }, 300)
+            }, 100)
+        } else if (route.params?.focusContact) {
+            // Scroll to contact section and focus phone input
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true })
+                setTimeout(() => {
+                    phoneInputRef.current?.focus()
+                }, 300)
+            }, 100)
+        }
+    }, [route.params?.focusBio, route.params?.focusContact])
 
     useFocusEffect(
         React.useCallback(() => {
@@ -86,7 +108,7 @@ export default function EditProfileScreen() {
                 if (error) {
                     console.error('Error fetching profile:', error)
                 } else {
-                    setProfile(data)
+                    setProfileState(data)
                     const initialFormData = {
                         first_name: data.first_name || '',
                         last_name: data.last_name || '',
@@ -117,7 +139,7 @@ export default function EditProfileScreen() {
             if (result.canceled || !result.assets?.[0]?.uri) return
 
             setSelectedProfileImageUri(result.assets[0].uri)
-            setProfile(prev => prev ? { ...prev, profile_url: result.assets[0].uri } : null)
+            setProfileState((prev: any) => prev ? { ...prev, profile_url: result.assets[0].uri } : null)
         } catch (error) {
             console.error('Error selecting profile image:', error)
             Alert.alert('Error', 'Failed to select profile image')
@@ -179,8 +201,14 @@ export default function EditProfileScreen() {
 
             if (result.canceled || !result.assets?.[0]?.uri) return
 
+            const manipulated = await ImageManipulator.manipulateAsync(
+                result.assets[0].uri,
+                [],
+                { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+            )
+
             setSelectedBannerImageUri(result.assets[0].uri)
-            setProfile(prev => prev ? { ...prev, banner_url: result.assets[0].uri } : null)
+            setProfileState((prev: any) => prev ? { ...prev, banner_url: result.assets[0].uri } : null)
         } catch (error) {
             console.error('Error selecting banner image:', error)
             Alert.alert('Error', 'Failed to select banner image')
@@ -232,7 +260,7 @@ export default function EditProfileScreen() {
 
     const handleSave = async () => {
         if (!user) return
-        setSaving(true)
+        setUploading(true)
         try {
             let publicProfileUrl = null
             let publicBannerUrl = null
@@ -263,7 +291,7 @@ export default function EditProfileScreen() {
                 .eq('id', user.id)
                 .single()
             if (!error && updatedProfile) {
-                setProfile(updatedProfile)
+                setProfileState(updatedProfile)
             }
             // Clear local image URIs
             setSelectedProfileImageUri(null)
@@ -275,7 +303,7 @@ export default function EditProfileScreen() {
             console.error('Error updating profile:', error)
             Alert.alert('Error', 'Failed to update profile')
         } finally {
-            setSaving(false)
+            setUploading(false)
         }
     }
 
@@ -333,51 +361,34 @@ export default function EditProfileScreen() {
 
     return (
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
+            <AppHeader title="Edit Profile">
+                <TouchableOpacity 
+                    style={[
+                        styles.saveButton, 
+                        { 
+                            backgroundColor: hasChanges() ? theme.colors.primary : theme.colors.mutedText + '40',
+                        }
+                    ]} 
+                    activeOpacity={0.7}
+                    onPress={handleSave}
+                    disabled={uploading || !hasChanges()}
+                >
+                    {uploading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <ThemedText style={[
+                            styles.saveButtonText,
+                            { color: hasChanges() ? '#fff' : theme.colors.mutedText }
+                        ]}>
+                            Save
+                        </ThemedText>
+                    )}
+                </TouchableOpacity>
+            </AppHeader>
+            
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                <ScrollView style={styles.root} showsVerticalScrollIndicator={false}>
-                    {/* Header */}
-                    <View style={[styles.header, {
-                        backgroundColor: theme.colors.background,
-                        borderBottomColor: theme.colors.border
-                    }]}>
-                        <TouchableOpacity 
-                            onPress={handleCancel}
-                            style={[styles.backButton, { backgroundColor: theme.colors.card }]}
-                            activeOpacity={0.7}
-                        >
-                            <ThemedIcon 
-                                type="ionicons" 
-                                name="close" 
-                                size={20} 
-                                color={theme.colors.text} 
-                            />
-                        </TouchableOpacity>
-                        <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>Edit Profile</ThemedText>
-                        <TouchableOpacity 
-                            style={[
-                                styles.saveButton, 
-                                { 
-                                    backgroundColor: hasChanges() ? theme.colors.primary : theme.colors.mutedText + '40',
-                                }
-                            ]} 
-                            activeOpacity={0.7}
-                            onPress={handleSave}
-                            disabled={saving || !hasChanges()}
-                        >
-                            {saving ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <ThemedText style={[
-                                    styles.saveButtonText,
-                                    { color: hasChanges() ? '#fff' : theme.colors.mutedText }
-                                ]}>
-                                    Save
-                                </ThemedText>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                                    {/* Banner */}
+                <ScrollView ref={scrollViewRef} style={styles.root} showsVerticalScrollIndicator={false}>
+                    {/* Banner */}
                 <TouchableOpacity
                     onPress={uploadBannerImage}
                     activeOpacity={0.9}
@@ -512,6 +523,7 @@ export default function EditProfileScreen() {
                             <View style={styles.fieldContainer}>
                                 <ThemedText style={[styles.fieldLabel, { color: theme.colors.mutedText }]}>Bio</ThemedText>
                                 <TextInput
+                                    ref={bioInputRef}
                                     style={[styles.modernTextArea, { 
                                         color: theme.colors.text, 
                                         backgroundColor: theme.colors.card 
@@ -554,6 +566,7 @@ export default function EditProfileScreen() {
                             <View style={styles.fieldContainer}>
                                 <ThemedText style={[styles.fieldLabel, { color: theme.colors.mutedText }]}>Phone</ThemedText>
                                 <TextInput
+                                    ref={phoneInputRef}
                                     style={[styles.modernInput, { 
                                         color: theme.colors.text, 
                                         backgroundColor: theme.colors.card 

@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useTheme } from '../context/themeContext'
 import { ThemedView, ThemedText, ThemedInputWrapper } from '../components/themed'
+import { AppHeader, AppContentWrapper } from '../components/themed/AppHeader'
 
 type RootStackParamList = {
   Profile: undefined
@@ -76,50 +77,49 @@ export default function MoreScreen() {
   )
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText style={styles.header}>More</ThemedText>
+    <ThemedView style={styles.root}>
+      <AppHeader title="More" />
+      <AppContentWrapper>
+        <ThemedInputWrapper style={{ marginBottom: 20, marginTop: 20 }}>
+          <Feather
+            name="search"
+            size={16}
+            color={theme.colors.mutedText}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            placeholder="Search"
+            placeholderTextColor={theme.colors.mutedText}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: theme.colors.text }]}
+          />
+        </ThemedInputWrapper>
 
-      <ThemedInputWrapper style={{ marginBottom: 20 }}>
-        <Feather
-          name="search"
-          size={16}
-          color={theme.colors.mutedText}
-          style={styles.searchIcon}
+        <FlatList
+          data={filteredOptions}
+          keyExtractor={(item) => item.key}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.optionRow, { borderColor: theme.colors.border }]}
+              onPress={() => navigation.navigate(item.navigateTo)}
+            >
+              <View style={styles.iconContainer}>{item.icon}</View>
+              <ThemedText style={styles.optionLabel}>{item.label}</ThemedText>
+              <AntDesign name="right" size={16} color={theme.colors.mutedText} style={styles.chevron} />
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
         />
-        <TextInput
-          placeholder="Search"
-          placeholderTextColor={theme.colors.mutedText}
-          value={search}
-          onChangeText={setSearch}
-          style={[styles.searchInput, { color: theme.colors.text }]}
-        />
-      </ThemedInputWrapper>
-
-      <FlatList
-        data={filteredOptions}
-        keyExtractor={(item) => item.key}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.optionRow, { borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate(item.navigateTo)}
-          >
-            <View style={styles.iconContainer}>{item.icon}</View>
-            <ThemedText style={styles.optionLabel}>{item.label}</ThemedText>
-            <AntDesign name="right" size={16} color={theme.colors.mutedText} style={styles.chevron} />
-          </TouchableOpacity>
-        )}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-      />
+      </AppContentWrapper>
     </ThemedView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    paddingTop: 20,
-    paddingHorizontal: 24,
   },
   header: {
     fontSize: 26,

@@ -20,6 +20,7 @@ import {
 } from '../components/themed'
 import { useTheme } from '../context/themeContext'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
+import { AppHeader } from '../components/themed/AppHeader'
 
 export default function WelcomeScreen() {
   const { user } = useAuth()
@@ -62,13 +63,15 @@ export default function WelcomeScreen() {
 
   return (
     <ThemedView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <AppHeader title="Home" />
       <ScrollView
         refreshControl={refreshControl}
-        contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.colors.background }]}
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.colors.background, paddingTop: 16 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-          <View style={styles.headerRow}>
+          {/* Greeting and avatar row, left-aligned, with spacing below header */}
+          <View style={styles.greetingRow}>
             <View style={styles.greetingBlock}>
               <ThemedText style={[styles.greeting, { color: theme.colors.text }]}>Hi, {firstName || 'there'} 👋</ThemedText>
               <ThemedText style={[styles.date, { color: theme.colors.mutedText }]}>{today}</ThemedText>
@@ -118,13 +121,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  headerRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
   },
   greetingBlock: {
     flexDirection: 'column',
@@ -198,5 +194,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    marginTop: 8,
   },
 })
