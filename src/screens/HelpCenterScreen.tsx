@@ -18,32 +18,37 @@ export default function HelpCenterScreen() {
     {
       id: 'getting-started',
       title: 'Getting Started',
-      icon: { type: 'ionicons', name: 'rocket-outline' },
-      description: 'Learn the basics of using the app'
+      icon: { type: 'ionicons' as const, name: 'rocket-outline' },
+      description: 'Learn the basics of using the app',
+      screen: 'GettingStarted'
     },
     {
       id: 'account',
       title: 'Account & Profile',
-      icon: { type: 'ionicons', name: 'person-outline' },
-      description: 'Manage your account settings'
+      icon: { type: 'ionicons' as const, name: 'person-outline' },
+      description: 'Manage your account settings',
+      screen: 'AccountProfile'
     },
     {
       id: 'messaging',
       title: 'Messaging',
-      icon: { type: 'ionicons', name: 'chatbubble-outline' },
-      description: 'How to send and receive messages'
+      icon: { type: 'ionicons' as const, name: 'chatbubble-outline' },
+      description: 'How to send and receive messages',
+      screen: 'Messaging'
     },
     {
       id: 'calendar',
       title: 'Calendar & Events',
-      icon: { type: 'ionicons', name: 'calendar-outline' },
-      description: 'Schedule and manage events'
+      icon: { type: 'ionicons' as const, name: 'calendar-outline' },
+      description: 'Schedule and manage events',
+      screen: 'CalendarEvents'
     },
     {
       id: 'troubleshooting',
       title: 'Troubleshooting',
-      icon: { type: 'ionicons', name: 'construct-outline' },
-      description: 'Common issues and solutions'
+      icon: { type: 'ionicons' as const, name: 'construct-outline' },
+      description: 'Common issues and solutions',
+      screen: 'Troubleshooting'
     }
   ]
 
@@ -94,6 +99,7 @@ export default function HelpCenterScreen() {
                 index === helpCategories.length - 1 && { borderBottomWidth: 0 }
               ]}
               activeOpacity={0.7}
+              onPress={() => category.screen && navigation.navigate(category.screen as never)}
             >
               <ThemedIcon type={category.icon.type as 'feather' | 'ionicons' | 'fontawesome'} name={category.icon.name} size={24} color={theme.colors.primary} style={styles.helpIcon} />
               <View style={styles.helpContent}>

@@ -18,30 +18,34 @@ export default function LegalScreen() {
     {
       id: 'privacy-policy',
       title: 'Privacy Policy',
-      icon: { type: 'ionicons', name: 'shield-outline' },
+      icon: { type: 'ionicons' as const, name: 'shield-outline' },
       description: 'How we collect, use, and protect your data',
-      lastUpdated: 'Updated March 15, 2024'
+      lastUpdated: 'Updated July 29, 2025',
+      screen: 'PrivacyPolicy'
     },
     {
       id: 'terms-of-service',
       title: 'Terms of Service',
-      icon: { type: 'ionicons', name: 'document-text-outline' },
+      icon: { type: 'ionicons' as const, name: 'document-text-outline' },
       description: 'Rules and guidelines for using our service',
-      lastUpdated: 'Updated March 15, 2024'
+      lastUpdated: 'Updated July 29, 2025',
+      screen: 'TermsOfService'
     },
     {
       id: 'cookie-policy',
       title: 'Cookie Policy',
-      icon: { type: 'ionicons', name: 'nutrition-outline' },
+      icon: { type: 'ionicons' as const, name: 'nutrition-outline' },
       description: 'How we use cookies and similar technologies',
-      lastUpdated: 'Updated March 15, 2024'
+      lastUpdated: 'Updated July 29, 2025',
+      screen: 'CookiePolicy'
     },
     {
       id: 'data-processing',
       title: 'Data Processing Agreement',
-      icon: { type: 'ionicons', name: 'settings-outline' },
+      icon: { type: 'ionicons' as const, name: 'settings-outline' },
       description: 'How we process your personal information',
-      lastUpdated: 'Updated March 15, 2024'
+      lastUpdated: 'Updated July 29, 2025',
+      screen: 'DataProcessingAgreement'
     }
   ]
 
@@ -49,17 +53,17 @@ export default function LegalScreen() {
     {
       title: 'GDPR Compliance',
       description: 'We comply with the General Data Protection Regulation (GDPR) and other applicable data protection laws.',
-      icon: { type: 'ionicons', name: 'checkmark-circle-outline' }
+      icon: { type: 'ionicons' as const, name: 'checkmark-circle-outline' }
     },
     {
       title: 'Data Security',
       description: 'Your data is encrypted and stored securely using industry-standard security measures.',
-      icon: { type: 'ionicons', name: 'lock-closed-outline' }
+      icon: { type: 'ionicons' as const, name: 'lock-closed-outline' }
     },
     {
       title: 'Third-Party Services',
       description: 'We use trusted third-party services that also comply with strict privacy standards.',
-      icon: { type: 'ionicons', name: 'people-outline' }
+      icon: { type: 'ionicons' as const, name: 'people-outline' }
     }
   ]
 
@@ -91,6 +95,7 @@ export default function LegalScreen() {
                 index === legalDocuments.length - 1 && { borderBottomWidth: 0 }
               ]}
               activeOpacity={0.7}
+              onPress={() => document.screen && navigation.navigate(document.screen as never)}
             >
               <ThemedIcon type={document.icon.type} name={document.icon.name} size={24} color={theme.colors.primary} style={styles.legalIcon} />
               <View style={styles.legalContent}>

@@ -28,7 +28,17 @@ import ProfileScreen from '../screens/ProfileScreen'
 import PreferencesScreen from '../screens/PreferencesScreen'
 import SettingsScreen from '../screens/SettingsScreen'
 import HelpCenterScreen from '../screens/HelpCenterScreen'
+import GettingStartedScreen from '../screens/GettingStartedScreen'
+import AccountProfileScreen from '../screens/AccountProfileScreen'
+import MessagingScreen from '../screens/MessagingScreen'
+import CalendarEventsScreen from '../screens/CalendarEventsScreen'
+import TroubleshootingScreen from '../screens/TroubleshootingScreen'
 import LegalScreen from '../screens/LegalScreen'
+import AboutAppScreen from '../screens/AboutAppScreen'
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen'
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen'
+import CookiePolicyScreen from '../screens/CookiePolicyScreen'
+import DataProcessingAgreementScreen from '../screens/DataProcessingAgreementScreen'
 import MessageThreadScreen from '../screens/MessageThreadScreen'
 import UserProfileScreen from '../screens/UserProfileScreen'
 import EditProfileScreen from '../screens/EditProfileScreen'
@@ -259,7 +269,17 @@ export default function RootNavigator() {
             <Stack.Screen name="Preferences" component={PreferencesScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
             <Stack.Screen name="Help" component={HelpCenterScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="GettingStarted" component={GettingStartedScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="AccountProfile" component={AccountProfileScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="Messaging" component={MessagingScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="CalendarEvents" component={CalendarEventsScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="Troubleshooting" component={TroubleshootingScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
             <Stack.Screen name="Legal" component={LegalScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="AboutApp" component={AboutAppScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="CookiePolicy" component={CookiePolicyScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
+            <Stack.Screen name="DataProcessingAgreement" component={DataProcessingAgreementScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
             <Stack.Screen name="MessageThread" component={MessageThreadScreen} options={{ animation: 'slide_from_right', gestureEnabled: true }} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} options={{ headerShown: false, animation: 'slide_from_right', gestureEnabled: true }} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false, animation: 'slide_from_right', gestureEnabled: true }} />

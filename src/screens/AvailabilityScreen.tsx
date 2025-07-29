@@ -62,16 +62,19 @@ export default function AvailabilityScreen() {
     const [hour, minute] = cleanTime.split(':').map(Number);
     const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     const period = hour >= 12 ? 'PM' : 'AM';
-    return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+    const safeMinute = isNaN(minute) ? 0 : minute;
+    return `${hour12}:${safeMinute.toString().padStart(2, '0')} ${period}`;
   };
 
   // Parse time to hour, minute and period
   const parseTime = (time: string): { hour: number; minute: number; period: 'AM' | 'PM' } => {
     const [hour, minute] = time.split(':').map(Number);
-    const hour12 = hour || 9;
+    const safeHour = isNaN(hour) ? 9 : hour;
+    const safeMinute = isNaN(minute) ? 0 : minute;
+    const hour12 = safeHour || 9;
     const period = hour12 >= 12 ? 'PM' : 'AM';
     const hourIn12Format = hour12 === 0 ? 12 : hour12 > 12 ? hour12 - 12 : hour12;
-    return { hour: hourIn12Format, minute: minute || 0, period };
+    return { hour: hourIn12Format, minute: safeMinute, period };
   };
 
   // Open time picker
@@ -83,6 +86,20 @@ export default function AvailabilityScreen() {
     setSelectedMinute(minute);
     setSelectedPeriod(period);
     setShowTimePicker(true);
+  };
+
+  const improvedScrollViewProps = {
+    showsVerticalScrollIndicator: false,
+    contentContainerStyle: styles.timePickerScrollContent,
+    // REMOVE snapToInterval - this is causing the conflict
+    // snapToInterval: 50, // <- Remove this line
+    decelerationRate: "fast",
+    scrollEventThrottle: 16,
+    bounces: false,
+    bouncesZoom: false,
+    alwaysBounceVertical: false,
+    pagingEnabled: false,
+    scrollEnabled: true,
   };
 
   // Set initial scroll positions when modal opens
@@ -116,7 +133,7 @@ export default function AvailabilityScreen() {
       hour24 = 0;
     }
     
-    const formattedTime = `${hour24.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+    const formattedTime = `${hour24.toString().padStart(2, '0')}:${(selectedMinute || 0).toString().padStart(2, '0')}`;
     
     const updatedData = {
       ...availabilityData,
@@ -142,41 +159,74 @@ export default function AvailabilityScreen() {
   const { hours, minutes, periods } = generateTimeOptions();
 
   // Handle scroll events for picker wheels
-  const handleHourScrollEnd = (event: any) => {
-    const y = event.nativeEvent.contentOffset.y;
-    const index = Math.round(y / 50);
-    if (index >= 0 && index < hours.length) {
-      setSelectedHour(hours[index]);
-      // Ensure scroll position is exactly at the selected item
+  // Improved scroll handlers that don't conflict with native snap behavior
+const handleHourScrollEnd = (event: any) => {
+  const y = event.nativeEvent.contentOffset.y;
+  const itemHeight = 50;
+  
+  // Calculate the closest item index
+  let targetIndex = Math.round(y / itemHeight);
+  
+  // Clamp to valid range
+  targetIndex = Math.max(0, Math.min(targetIndex, hours.length - 1));
+  
+  const newHour = hours[targetIndex];
+  const targetY = targetIndex * itemHeight;
+  
+  // Only update if there's a meaningful change (more than half an item away)
+  if (newHour !== selectedHour || Math.abs(y - targetY) > 10) {
+    setSelectedHour(newHour);
+    
+    // Delay the scroll to avoid conflicts with momentum
+    requestAnimationFrame(() => {
       if (hourScrollRef.current) {
-        hourScrollRef.current.scrollTo({ y: index * 50, animated: true });
+        hourScrollRef.current.scrollTo({ y: targetY, animated: true });
       }
-    }
-  };
+    });
+  }
+};
 
-  const handleMinuteScrollEnd = (event: any) => {
-    const y = event.nativeEvent.contentOffset.y;
-    const index = Math.round(y / 50);
-    if (index >= 0 && index < minutes.length) {
-      setSelectedMinute(minutes[index]);
-      // Ensure scroll position is exactly at the selected item
+const handleMinuteScrollEnd = (event: any) => {
+  const y = event.nativeEvent.contentOffset.y;
+  const itemHeight = 50;
+  
+  let targetIndex = Math.round(y / itemHeight);
+  targetIndex = Math.max(0, Math.min(targetIndex, minutes.length - 1));
+  
+  const newMinute = minutes[targetIndex];
+  const targetY = targetIndex * itemHeight;
+  
+  if (newMinute !== selectedMinute || Math.abs(y - targetY) > 10) {
+    setSelectedMinute(newMinute);
+    
+    requestAnimationFrame(() => {
       if (minuteScrollRef.current) {
-        minuteScrollRef.current.scrollTo({ y: index * 50, animated: true });
+        minuteScrollRef.current.scrollTo({ y: targetY, animated: true });
       }
-    }
-  };
+    });
+  }
+};
 
-  const handlePeriodScrollEnd = (event: any) => {
-    const y = event.nativeEvent.contentOffset.y;
-    const index = Math.round(y / 50);
-    if (index >= 0 && index < periods.length) {
-      setSelectedPeriod(periods[index] as 'AM' | 'PM');
-      // Ensure scroll position is exactly at the selected item
+const handlePeriodScrollEnd = (event: any) => {
+  const y = event.nativeEvent.contentOffset.y;
+  const itemHeight = 50;
+  
+  let targetIndex = Math.round(y / itemHeight);
+  targetIndex = Math.max(0, Math.min(targetIndex, periods.length - 1));
+  
+  const newPeriod = periods[targetIndex] as 'AM' | 'PM';
+  const targetY = targetIndex * itemHeight;
+  
+  if (newPeriod !== selectedPeriod || Math.abs(y - targetY) > 10) {
+    setSelectedPeriod(newPeriod);
+    
+    requestAnimationFrame(() => {
       if (periodScrollRef.current) {
-        periodScrollRef.current.scrollTo({ y: index * 50, animated: true });
+        periodScrollRef.current.scrollTo({ y: targetY, animated: true });
       }
-    }
-  };
+    });
+  }
+};
 
   // Create default availability (9-5 every day)
   const createDefaultAvailability = (): AvailabilityData => {
@@ -540,7 +590,7 @@ export default function AvailabilityScreen() {
                         activeOpacity={0.8}
                       >
                         <ThemedText style={[styles.timeInputText, { color: theme.colors.text }]}>
-                          {currentDayData.startTime}
+                          {formatTime(currentDayData.startTime)}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -567,7 +617,7 @@ export default function AvailabilityScreen() {
                         activeOpacity={0.8}
                       >
                         <ThemedText style={[styles.timeInputText, { color: theme.colors.text }]}>
-                          {currentDayData.endTime}
+                          {formatTime(currentDayData.endTime)}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -612,7 +662,7 @@ export default function AvailabilityScreen() {
               </ThemedText>
               <View style={[styles.timeDisplay, { backgroundColor: theme.colors.card }]}>
                 <ThemedText style={[styles.timeDisplayText, { color: theme.colors.primary }]}>
-                  {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedPeriod}
+                  {(selectedHour || 9)}:{(selectedMinute || 0).toString().padStart(2, '0')} {(selectedPeriod || 'AM')}
                 </ThemedText>
               </View>
             </View>
@@ -628,6 +678,7 @@ export default function AvailabilityScreen() {
                   <View style={[styles.timePickerSelection, { backgroundColor: theme.colors.primary + '15' }]} />
                   <ScrollView
                     ref={hourScrollRef}
+                    {...improvedScrollViewProps}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.timePickerScrollContent}
                     snapToInterval={50}
@@ -670,6 +721,7 @@ export default function AvailabilityScreen() {
                   <View style={[styles.timePickerSelection, { backgroundColor: theme.colors.primary + '15' }]} />
                   <ScrollView
                     ref={minuteScrollRef}
+                    {...improvedScrollViewProps}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.timePickerScrollContent}
                     snapToInterval={50}
@@ -708,6 +760,7 @@ export default function AvailabilityScreen() {
                   <View style={[styles.timePickerSelection, { backgroundColor: theme.colors.primary + '15' }]} />
                   <ScrollView
                     ref={periodScrollRef}
+                    {...improvedScrollViewProps}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.timePickerScrollContent}
                     snapToInterval={50}

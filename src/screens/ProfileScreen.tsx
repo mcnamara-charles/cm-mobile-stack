@@ -190,7 +190,7 @@ export default function ProfileScreen() {
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
             <AppHeader 
                 title={name}
-                backButton={<BackButton />}
+                backButton={<BackButton iconName="arrow-back" />}
             >
                 <TouchableOpacity 
                     style={styles.headerButton} 

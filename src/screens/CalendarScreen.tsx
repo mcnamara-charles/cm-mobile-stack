@@ -354,7 +354,7 @@ export default function CalendarScreen() {
                       </ThemedText>
                       
                       {/* Unavailable indicator - diagonal striped pattern */}
-                      {(isUnavailable || hasZeroDayAvailability) && isCurrentMonth && (
+                      {(isUnavailable || hasZeroDayAvailability) && isCurrentMonth && !isLoading && (
                         <View style={{
                           position: 'absolute',
                           top: 0,
@@ -444,7 +444,10 @@ export default function CalendarScreen() {
           style={styles.modalOverlay}
           onPress={handleCloseModal}
         >
-          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+          <Pressable
+            style={[styles.modalContent, { backgroundColor: theme.colors.background }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
               <View style={styles.modalTitleContainer}>
@@ -561,7 +564,7 @@ export default function CalendarScreen() {
                 </ThemedText>
               </TouchableOpacity>
             </View>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
@@ -929,7 +932,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     position: 'absolute',
-    left: 3,
+    left: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,

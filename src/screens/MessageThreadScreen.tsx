@@ -14,6 +14,7 @@ import {
   Modal,
   Pressable,
   Image,
+  Animated,
 } from 'react-native'
 
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native'
@@ -77,6 +78,7 @@ export default function MessageThreadScreen() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingDebounceRef = useRef<NodeJS.Timeout | null>(null)
   const lastTypingTimeRef = useRef<number>(0)
+  const fadeAnim = useRef(new Animated.Value(0)).current
 
   type FlatListItem =
   | { type: 'date'; date: string }
@@ -452,6 +454,13 @@ export default function MessageThreadScreen() {
       setMessages(messageData ?? [])
       setOtherUser(otherUserData)
       setLoading(false)
+      
+      // Fade in the content when loading is complete
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start()
     }
 
     loadInitialData()
@@ -727,6 +736,108 @@ export default function MessageThreadScreen() {
     }
   }
 
+  if (loading) {
+    return (
+      <ThemedView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        {/* Loading Header */}
+        <View style={[styles.header, {
+          backgroundColor: theme.colors.card,
+          borderBottomColor: theme.colors.border
+        }]}>
+          <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Inbox' })} style={styles.headerBack}>
+            <ThemedIcon
+              type="ionicons"
+              name="arrow-back"
+              size={24}
+              color={theme.colors.text}
+            />
+          </TouchableOpacity>
+          <View style={styles.headerUserInfo}>
+            <View style={[styles.headerAvatar, { backgroundColor: theme.colors.primary + '20' }]}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            </View>
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <View style={[styles.loadingName, { backgroundColor: theme.colors.border }]} />
+              <View style={[styles.loadingEmail, { backgroundColor: theme.colors.border }]} />
+            </View>
+          </View>
+          <View style={{ width: 24 }} />
+        </View>
+
+        {/* Loading Content */}
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
+          <View style={[styles.loadingContainer, { backgroundColor: theme.colors.card }]}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <ThemedText style={[styles.loadingText, { color: theme.colors.mutedText, marginTop: 16 }]}>
+              Loading conversation...
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Input Bar - Always visible even during loading */}
+        <View style={[styles.inputContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border, width: '100%' }]}>
+          <View style={styles.leftIconsContainer}>
+            <ThemedTouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+              <ThemedIcon
+                type="ionicons"
+                name="add-circle-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </ThemedTouchableOpacity>
+            <ThemedTouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+              <ThemedIcon
+                type="ionicons"
+                name="camera-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </ThemedTouchableOpacity>
+            <ThemedTouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+              <ThemedIcon
+                type="ionicons"
+                name="images-outline"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </ThemedTouchableOpacity>
+          </View>
+
+          <TextInput
+            style={[
+              styles.textInput,
+              { color: theme.colors.text },
+              { flex: 1, minWidth: 120, maxWidth: '100%' }
+            ]}
+            placeholder="Type a message..."
+            placeholderTextColor={theme.colors.mutedText}
+            editable={false}
+            multiline
+            maxLength={1000}
+          />
+
+          <ThemedTouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: theme.colors.border,
+                opacity: 0.5,
+              },
+            ]}
+            disabled={true}
+          >
+            <ThemedIcon
+              type="ionicons"
+              name="send"
+              size={20}
+              color={theme.colors.mutedText}
+            />
+          </ThemedTouchableOpacity>
+        </View>
+      </ThemedView>
+    )
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -735,9 +846,10 @@ export default function MessageThreadScreen() {
     >
       <ThemedView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       {/* Header */}
-      <View style={[styles.header, {
+      <Animated.View style={[styles.header, {
         backgroundColor: theme.colors.card,
-        borderBottomColor: theme.colors.border
+        borderBottomColor: theme.colors.border,
+        opacity: fadeAnim
       }]}>
         <TouchableOpacity onPress={() => navigation.navigate('MainTabs', { screen: 'Inbox' })} style={styles.headerBack}>
           <ThemedIcon
@@ -778,9 +890,9 @@ export default function MessageThreadScreen() {
           </View>
         )}
         <View style={{ width: 24 }} />
-      </View>
+      </Animated.View>
 
-      <View style={{ flex: 1 }}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
         <FlatList
           ref={flatListRef}
           data={getFlatListItems(messages)}
@@ -855,7 +967,7 @@ export default function MessageThreadScreen() {
             </ThemedText>
           </View>
         )}
-      </View>
+      </Animated.View>
 
       {/* Selected attachments preview */}
       {selectedAttachments.length > 0 && (
@@ -1617,5 +1729,32 @@ const styles = StyleSheet.create({
   },
   lightboxImageSwipeAreaRight: {
     left: '50%',
+  },
+  // Loading styles
+  loadingContainer: {
+    padding: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  loadingName: {
+    height: 16,
+    width: 120,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  loadingEmail: {
+    height: 12,
+    width: 80,
+    borderRadius: 6,
   },
 });

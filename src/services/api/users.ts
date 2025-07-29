@@ -83,3 +83,17 @@ export async function updateUserProfile({
 
   return { success: true }
 }
+
+export async function fetchAllProviders() {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, first_name, last_name, profile_url, email')
+    .eq('is_provider', true)
+
+  if (error) {
+    console.error('❌ Failed to fetch providers:', error)
+    return []
+  }
+
+  return data
+}

@@ -70,9 +70,25 @@ export default function SettingsScreen() {
         {/* About Section */}
         <ThemedText style={[styles.sectionTitle, { color: theme.colors.mutedText }]}>About</ThemedText>
         <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }] }>
-          <SettingsRow icon={{ type: 'ionicons', name: 'information-circle-outline' }} label="About App" description="Learn more about this application" />
-          <SettingsRow icon={{ type: 'ionicons', name: 'document-text-outline' }} label="Terms of Service" description="Read our terms and conditions" />
-          <SettingsRow icon={{ type: 'ionicons', name: 'shield-outline' }} label="Privacy Policy" description="How we protect your privacy" isLast={true} />
+          <SettingsRow 
+            icon={{ type: 'ionicons', name: 'information-circle-outline' }} 
+            label="About App" 
+            description="Learn more about this application" 
+            onPress={() => navigation.navigate('AboutApp' as never)}
+          />
+          <SettingsRow 
+            icon={{ type: 'ionicons', name: 'document-text-outline' }} 
+            label="Terms of Service" 
+            description="Read our terms and conditions" 
+            onPress={() => navigation.navigate('TermsOfService' as never)}
+          />
+          <SettingsRow 
+            icon={{ type: 'ionicons', name: 'shield-outline' }} 
+            label="Privacy Policy" 
+            description="How we protect your privacy" 
+            isLast={true}
+            onPress={() => navigation.navigate('PrivacyPolicy' as never)}
+          />
         </View>
 
         {/* Danger Zone */}

@@ -24,10 +24,12 @@ type UserData = {
 
 type RealtimeMessageContextType = {
   latestMessage: Message | null
+  readStatusUpdates: { messageId: string; readAt: string }[]
 }
 
 const RealtimeMessageContext = createContext<RealtimeMessageContextType>({
   latestMessage: null,
+  readStatusUpdates: [],
 })
 
 export const useRealtimeMessages = () => useContext(RealtimeMessageContext)
@@ -35,6 +37,7 @@ export const useRealtimeMessages = () => useContext(RealtimeMessageContext)
 export const RealtimeMessageProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth()
   const [latestMessage, setLatestMessage] = useState<Message | null>(null)
+  const [readStatusUpdates, setReadStatusUpdates] = useState<{ messageId: string; readAt: string }[]>([])
   const senderCache = useRef<Map<string, UserData | null>>(new Map())
 
   useEffect(() => {
@@ -85,6 +88,26 @@ export const RealtimeMessageProvider = ({ children }: { children: React.ReactNod
           setLatestMessage(() => JSON.parse(JSON.stringify(enrichedMessage)))
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updatedMessage = payload.new as Message
+          
+          if (updatedMessage.read_at) {
+            console.log('📖 Message read status updated:', updatedMessage.id, updatedMessage.read_at)
+            setReadStatusUpdates(prev => [...prev, { 
+              messageId: updatedMessage.id, 
+              readAt: updatedMessage.read_at! 
+            }])
+          }
+        }
+      )
       .subscribe()
 
     return () => {
@@ -93,7 +116,7 @@ export const RealtimeMessageProvider = ({ children }: { children: React.ReactNod
   }, [user?.id])
 
   return (
-    <RealtimeMessageContext.Provider value={{ latestMessage }}>
+    <RealtimeMessageContext.Provider value={{ latestMessage, readStatusUpdates }}>
       {children}
     </RealtimeMessageContext.Provider>
   )
