@@ -16,7 +16,7 @@ import { ThemedIcon } from '../components/themed'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../services/supabaseClient'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText } from '../components/themed'
+import { ThemedView, ThemedText, BackButton } from '../components/themed'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
 import { AppHeader } from '../components/themed/AppHeader'
 
@@ -113,7 +113,10 @@ export default function UserProfileScreen() {
 
     return (
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
-            <AppHeader title={name}>
+            <AppHeader 
+                title={name}
+                backButton={<BackButton />}
+            >
                 <TouchableOpacity 
                     style={[styles.messageButton, { backgroundColor: theme.colors.primary }]} 
                     activeOpacity={0.7}
@@ -334,15 +337,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    backButton: {
-        padding: 8,
-        marginRight: 8,
-        borderRadius: 20,
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+
     messageButton: {
         padding: 8,
         borderRadius: 20,

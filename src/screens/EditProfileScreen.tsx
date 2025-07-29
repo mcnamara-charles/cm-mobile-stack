@@ -24,7 +24,7 @@ import * as ImageManipulator from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText, ThemedIcon } from '../components/themed'
+import { ThemedView, ThemedText, ThemedIcon, BackButton } from '../components/themed'
 import { AppHeader } from '../components/themed/AppHeader'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
@@ -361,7 +361,10 @@ export default function EditProfileScreen({ route }: any) {
 
     return (
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
-            <AppHeader title="Edit Profile">
+            <AppHeader 
+                title="Edit Profile"
+                backButton={<BackButton />}
+            >
                 <TouchableOpacity 
                     style={[
                         styles.saveButton, 
@@ -669,14 +672,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
-    backButton: {
-        padding: 8,
-        borderRadius: 20,
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+
     saveButton: {
         paddingHorizontal: 16,
         paddingVertical: 8,

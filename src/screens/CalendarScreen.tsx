@@ -7,6 +7,8 @@ import {
   ScrollView,
   Modal,
   Pressable,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native'
 import { useTheme } from '../context/themeContext'
 import { useAuth } from '../context/AuthContext'
@@ -35,6 +37,7 @@ export default function CalendarScreen() {
   const [unavailableDays, setUnavailableDays] = useState<string[]>([])
   const [userAvailabilities, setUserAvailabilities] = useState<any[]>([])
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   // Fetch user profile to check is_provider flag
   React.useEffect(() => {
@@ -59,23 +62,26 @@ export default function CalendarScreen() {
   }, [user])
 
   // Fetch unavailable days and user availabilities for the current month
-  React.useEffect(() => {
-    const fetchAvailabilityData = async () => {
-      if (!user) return
-      try {
-        // Fetch unavailable days
-        const unavailabilities = await fetchUserUnavailabilities(user.id)
-        const unavailableDates = unavailabilities.map(u => u.date)
-        setUnavailableDays(unavailableDates)
-        
-        // Fetch user's general availability
-        const availabilities = await fetchUserAvailabilities(user.id)
-        setUserAvailabilities(availabilities)
-      } catch (error) {
-        console.error('Error fetching availability data:', error)
-      }
+  const fetchAvailabilityData = async () => {
+    if (!user) return
+    setIsLoading(true)
+    try {
+      // Fetch unavailable days
+      const unavailabilities = await fetchUserUnavailabilities(user.id)
+      const unavailableDates = unavailabilities.map(u => u.date)
+      setUnavailableDays(unavailableDates)
+      // Fetch user's general availability
+      const availabilities = await fetchUserAvailabilities(user.id)
+      setUserAvailabilities(availabilities)
+    } catch (error) {
+      console.error('Error fetching availability data:', error)
+    } finally {
+      setIsLoading(false)
+      setRefreshing(false)
     }
+  }
 
+  React.useEffect(() => {
     fetchAvailabilityData()
   }, [user, currentMonth])
 
@@ -215,7 +221,7 @@ export default function CalendarScreen() {
   }
 
   return (
-    <ThemedView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <ThemedView style={{ flex: 1, position: 'relative', backgroundColor: theme.colors.background }}>
       <AppHeader title="Calendar">
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <TouchableOpacity 
@@ -239,6 +245,16 @@ export default function CalendarScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true)
+              fetchAvailabilityData()
+            }}
+            tintColor={theme.colors.primary}
+          />
+        }
       >
         <View style={{ height: 16 }} />
         <View style={[styles.header, { borderColor: theme.colors.border }]}> 
@@ -260,6 +276,22 @@ export default function CalendarScreen() {
         </View>
 
         <View style={[styles.grid, { paddingHorizontal: CALENDAR_PADDING }]}> 
+          {/* Loader overlay covers everything below the header */}
+          {isLoading && (
+            <View style={{
+              position: 'absolute',
+              top: 0, // set to 0 to cover the header too, or adjust if you want to leave header visible
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.35)',
+              zIndex: 100,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }} pointerEvents="auto">
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+            </View>
+          )}
           {weeks.map((week, wIdx) => (
             <View key={wIdx} style={styles.weekRow}>
               {week.map((day, dIdx) => {
@@ -283,6 +315,7 @@ export default function CalendarScreen() {
                     }}
                     onPress={() => setSelectedDate(day)}
                     activeOpacity={0.7}
+                    disabled={isLoading}
                   >
                     <View style={{
                       width: DAY_CELL_SIZE * 0.8,
@@ -290,13 +323,15 @@ export default function CalendarScreen() {
                       borderRadius: 8, // Rounded square instead of circle
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: isSelected
-                        ? theme.colors.primary
-                        : today
-                          ? theme.colors.primary + '22'
-                          : isUnavailable || hasZeroDayAvailability
-                            ? theme.colors.mutedText + '20'
-                            : 'transparent',
+                      backgroundColor: isLoading
+                        ? theme.colors.input
+                        : isUnavailable || hasZeroDayAvailability
+                          ? theme.colors.mutedText + '20'
+                          : isSelected
+                            ? theme.colors.primary
+                            : today
+                              ? theme.colors.primary + '22'
+                              : 'transparent',
                       borderWidth: today && !isSelected ? 2 : 0,
                       borderColor: today && !isSelected ? theme.colors.primary : 'transparent',
                       opacity: isCurrentMonth ? 1 : 0.35,

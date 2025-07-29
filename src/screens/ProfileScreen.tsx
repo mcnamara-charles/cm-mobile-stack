@@ -22,7 +22,7 @@ import * as ImageManipulator from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
-import { ThemedView, ThemedText } from '../components/themed'
+import { ThemedView, ThemedText, BackButton } from '../components/themed'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
 import { AppHeader } from '../components/themed/AppHeader'
 
@@ -188,7 +188,10 @@ export default function ProfileScreen() {
 
     return (
         <ThemedView style={[styles.root, { backgroundColor: theme.colors.background }]}>
-            <AppHeader title={name}>
+            <AppHeader 
+                title={name}
+                backButton={<BackButton />}
+            >
                 <TouchableOpacity 
                     style={styles.headerButton} 
                     activeOpacity={0.7}
@@ -502,15 +505,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 16,
     },
-    backButton: {
-        padding: 8,
-        marginRight: 8,
-        borderRadius: 20,
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+
     editButton: {
         padding: 8,
         borderRadius: 20,

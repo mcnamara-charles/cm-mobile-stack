@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedIcon } from '../components/themed'
+import { ThemedView, ThemedText, ThemedTouchableOpacity, ThemedIcon, BackButton } from '../components/themed'
 import { useTheme } from '../context/themeContext'
 
 export default function HelpCenterScreen() {
@@ -77,9 +77,7 @@ export default function HelpCenterScreen() {
           },
         ]}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <ThemedIcon type="ionicons" name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
+        <BackButton iconName="arrow-back" />
         <ThemedText style={[styles.headerText, { color: theme.colors.text }]}>Help Center</ThemedText>
         <View style={{ width: 24 }} />
       </View>

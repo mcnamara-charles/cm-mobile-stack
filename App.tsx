@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Platform } from 'react-native'
 import { ThemeProvider, useTheme } from './src/context/themeContext'
 import * as NavigationBar from 'expo-navigation-bar'
+import { RealtimeMessageProvider } from './src/context/MessageRealtimeContext'
 
 function ThemedApp() {
   const { themeName, theme } = useTheme()
@@ -51,7 +52,9 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <ThemedApp />
+        <RealtimeMessageProvider>
+          <ThemedApp />
+        </RealtimeMessageProvider>
       </ThemeProvider>
     </AuthProvider>
   )

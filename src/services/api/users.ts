@@ -1,5 +1,20 @@
 import { supabase } from '../supabaseClient'
 
+export async function fetchUserById(userId: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, first_name, last_name, profile_url, email')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching user by ID:', error)
+    return null
+  }
+
+  return data
+}
+
 export async function searchUsersByEmail(query: string) {
   if (!query) return []
 

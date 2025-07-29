@@ -42,6 +42,15 @@ type Message = {
     isFromMe?: boolean
     unread_count?: number
     is_unread?: boolean
+    attachments?: MessageAttachment[]
+}
+
+type MessageAttachment = {
+    id?: string
+    message_id?: string
+    url: string
+    type: 'image' | 'video' | 'file'
+    created_at: string
 }
 
 export default function InboxScreen() {
@@ -95,21 +104,31 @@ export default function InboxScreen() {
 
         const data = await fetchLatestMessagesForUser(user.id)
 
-        const mappedMessages = data.map((msg: any) => ({
-            id: msg.id,
-            title: msg.first_name + ' ' + msg.last_name,
-            content: msg.content,
-            timestamp: msg.created_at,
-            read: !msg.is_unread,
-            sender: msg.first_name,
-            profile_url: msg.profile_url,
-            otherUserId: msg.sender_id === user.id ? msg.recipient_id : msg.sender_id,
-            first_name: msg.first_name,
-            last_name: msg.last_name,
-            isFromMe: msg.sender_id === user.id,
-            unread_count: msg.unread_count || 0,
-            is_unread: msg.is_unread || false,
-        }))
+        const mappedMessages = data.map((msg: any) => {
+            const message = {
+                id: msg.id,
+                title: msg.first_name + ' ' + msg.last_name,
+                content: msg.content,
+                timestamp: msg.created_at,
+                read: !msg.is_unread,
+                sender: msg.first_name,
+                profile_url: msg.profile_url,
+                otherUserId: msg.sender_id === user.id ? msg.recipient_id : msg.sender_id,
+                first_name: msg.first_name,
+                last_name: msg.last_name,
+                isFromMe: msg.sender_id === user.id,
+                unread_count: msg.unread_count || 0,
+                is_unread: msg.is_unread || false,
+                attachments: msg.attachments || [],
+            }
+            
+            // Debug: Log if message has attachments
+            if (msg.attachments && msg.attachments.length > 0) {
+                console.log('📷 Message has attachments:', msg.id, msg.attachments.length)
+            }
+            
+            return message
+        })
 
         setMessages(mappedMessages)
     }, [user])
@@ -191,18 +210,56 @@ export default function InboxScreen() {
                             {format(new Date(item.timestamp), 'h:mm a')}
                         </ThemedText>
                     </View>
-                    <ThemedText
-                        style={[
-                            styles.messagePreview,
-                            {
-                                color: (item.unread_count || 0) > 0 ? theme.colors.text : theme.colors.mutedText,
-                                fontWeight: (item.unread_count || 0) > 0 ? '500' : '400'
-                            }
-                        ]}
-                        numberOfLines={1}
-                    >
-                        {item.isFromMe ? 'You: ' : `${item.first_name}: `}{item.content}
-                    </ThemedText>
+                    <View style={styles.messagePreviewRow}>
+                        <ThemedText
+                            style={[
+                                styles.messagePreview,
+                                {
+                                    color: (item.unread_count || 0) > 0 ? theme.colors.text : theme.colors.mutedText,
+                                    fontWeight: (item.unread_count || 0) > 0 ? '500' : '400'
+                                }
+                            ]}
+                            numberOfLines={1}
+                        >
+                            {item.isFromMe ? 'You: ' : `${item.first_name}: `}
+                        </ThemedText>
+                        {item.attachments && item.attachments.length > 0 ? (
+                            <View style={styles.imageIndicator}>
+                                <ThemedIcon
+                                    type="ionicons"
+                                    name="image-outline"
+                                    size={14}
+                                    color={theme.colors.primary}
+                                    style={{ marginRight: 4 }}
+                                />
+                                <ThemedText
+                                    style={[
+                                        styles.messagePreview,
+                                        {
+                                            color: (item.unread_count || 0) > 0 ? theme.colors.text : theme.colors.mutedText,
+                                            fontWeight: (item.unread_count || 0) > 0 ? '500' : '400'
+                                        }
+                                    ]}
+                                    numberOfLines={1}
+                                >
+                                    {item.attachments.length === 1 ? 'Image' : `${item.attachments.length} images`}
+                                </ThemedText>
+                            </View>
+                        ) : (
+                            <ThemedText
+                                style={[
+                                    styles.messagePreview,
+                                    {
+                                        color: (item.unread_count || 0) > 0 ? theme.colors.text : theme.colors.mutedText,
+                                        fontWeight: (item.unread_count || 0) > 0 ? '500' : '400'
+                                    }
+                                ]}
+                                numberOfLines={1}
+                            >
+                                {item.content}
+                            </ThemedText>
+                        )}
+                    </View>
                 </View>
             </View>
         </ThemedTouchableOpacity>
@@ -409,6 +466,16 @@ const styles = StyleSheet.create({
     messageTime: {
         fontSize: 12,
         fontWeight: '500',
+    },
+
+    messagePreviewRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    imageIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     messagePreview: {
         fontSize: 14,

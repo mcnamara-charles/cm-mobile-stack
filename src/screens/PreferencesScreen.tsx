@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { ThemedIcon } from '../components/themed'
+import { ThemedIcon, BackButton } from '../components/themed'
 import { useTheme } from '../context/themeContext'
 import { ThemedView, ThemedText } from '../components/themed'
 
@@ -170,18 +170,7 @@ export default function PreferencesScreen() {
         backgroundColor: theme.colors.background,
         borderBottomColor: theme.colors.border 
       }]}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <ThemedIcon 
-            type="ionicons" 
-            name="arrow-back" 
-            size={24} 
-            color={theme.colors.text} 
-          />
-        </TouchableOpacity>
+        <BackButton iconName="arrow-back" />
         <ThemedText style={[styles.headerTitle, { color: theme.colors.text }]}>
           Preferences
         </ThemedText>

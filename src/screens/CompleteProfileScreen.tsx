@@ -215,6 +215,24 @@ export default function CompleteProfileScreen({ navigation }: any) {
 
       if (error) throw error
 
+      // After updating the user profile, insert default availability if none exists
+      const { data: existingAvailabilities, error: availError } = await supabase
+        .from('availabilities')
+        .select('id')
+        .eq('user_id', user!.id)
+
+      if (!availError && (!existingAvailabilities || existingAvailabilities.length === 0)) {
+        // Insert default 9-5 availability for all 7 days (0=Sunday, 6=Saturday)
+        const defaultAvailabilities = Array.from({ length: 7 }, (_, day) => ({
+          user_id: user!.id,
+          day_of_week: day,
+          is_available: true,
+          start_time: '09:00',
+          end_time: '17:00',
+        }))
+        await supabase.from('availabilities').insert(defaultAvailabilities)
+      }
+
       // Update local profile
       const { data: updatedProfile } = await supabase
         .from('users')
@@ -226,10 +244,7 @@ export default function CompleteProfileScreen({ navigation }: any) {
         // setProfile(updatedProfile) // This line was not in the original file, so it's removed.
       }
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainTabs' }],
-      })
+      navigation.navigate('MainTabs')
     } catch (error) {
       console.error('Error saving profile:', error)
       Alert.alert('Error', 'Failed to save profile. Please try again.')

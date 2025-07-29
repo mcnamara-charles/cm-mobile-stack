@@ -3,7 +3,7 @@ import { View, TextInput, TouchableOpacity, ScrollView, Animated, StyleSheet, Ke
 import { useTheme } from '../context/themeContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { ThemedText } from '../components/themed/ThemedText';
+import { ThemedText, BackButton } from '../components/themed';
 import { ThemedIcon } from '../components/themed/ThemedIcon';
 import { AppHeader } from '../components/themed/AppHeader';
 import { fetchUserAvailabilities, setGeneralAvailability, GeneralAvailabilityInput } from '../services/api/availability';
@@ -352,15 +352,7 @@ export default function AvailabilityScreen() {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <AppHeader 
           title="Availability" 
-          backButton={
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.7}
-            >
-              <ThemedIcon type="ionicons" name="arrow-back" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          }
+          backButton={<BackButton iconName="arrow-back" />}
         />
         <View style={styles.loadingContainer}>
           <ThemedText style={[styles.loadingText, { color: theme.colors.text }]}>
@@ -379,15 +371,7 @@ export default function AvailabilityScreen() {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <AppHeader 
           title="Availability" 
-          backButton={
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.7}
-            >
-              <ThemedIcon type="ionicons" name="arrow-back" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          }
+          backButton={<BackButton iconName="arrow-back" />}
         >
           <TouchableOpacity
             style={[
