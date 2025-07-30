@@ -1,3 +1,6 @@
+import { RouteProp } from '@react-navigation/native'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
+
 export type RootStackParamList = {
     MainTabs: undefined
     Profile: undefined
@@ -23,3 +26,15 @@ export type RootStackParamList = {
     Signup: undefined
     CompleteProfile: undefined
   }
+
+// Navigation prop types
+export type RootStackNavigationProp<T extends keyof RootStackParamList> = 
+  NativeStackNavigationProp<RootStackParamList, T>
+
+// Route prop types
+export type RootStackRouteProp<T extends keyof RootStackParamList> = 
+  RouteProp<RootStackParamList, T>
+
+// Specific screen types
+export type MessageThreadNavigationProp = RootStackNavigationProp<'MessageThread'>
+export type MessageThreadRouteProp = RootStackRouteProp<'MessageThread'>

@@ -2,15 +2,9 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { supabase } from '../services/supabaseClient'
 import { useAuth } from './AuthContext'
 import { fetchUserById } from '../services/api/users'
+import type { MessageWithAttachments } from '../types/global'
 
-type Message = {
-  id: string
-  sender_id: string
-  recipient_id: string
-  content: string
-  created_at: string
-  read_at?: string
-  // Enriched fields
+type Message = MessageWithAttachments & {
   sender_name?: string
   profile_url?: string | null
 }
@@ -56,7 +50,10 @@ export const RealtimeMessageProvider = ({ children }: { children: React.ReactNod
           filter: `recipient_id=eq.${user.id}`,
         },
         async (payload) => {
-          const newMessage = payload.new as Message
+          const newMessage = {
+            ...(payload.new as MessageWithAttachments),
+            attachments: (payload.new as any).attachments ?? []
+          }
 
           if (newMessage.sender_id === user.id) {
             console.log('📤 Ignoring self-sent message')

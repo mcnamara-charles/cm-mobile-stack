@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system'
 import { supabase } from '../supabaseClient'
 import { SUPABASE_URL } from '../../../config'
 import * as ImagePicker from 'expo-image-picker'
+import { MessageWithAttachments } from '../../types/global'
 
 // Types for message attachments
 export type MessageAttachment = {
@@ -11,17 +12,6 @@ export type MessageAttachment = {
   type: 'image' | 'video' | 'file'
   created_at: string
 }
-
-export type MessageWithAttachments = {
-  id: string
-  sender_id: string
-  recipient_id: string
-  content: string
-  created_at: string
-  read_at?: string
-  attachments?: MessageAttachment[]
-}
-
 /**
  * Fetch all messages between two users (in chronological order) with attachments.
  */
@@ -68,7 +58,7 @@ export async function fetchMessagesBetween(userId: string, otherUserId: string):
   return (messages || []).map(message => ({
     ...message,
     attachments: attachmentsByMessage[message.id] || []
-  }))
+  })) as MessageWithAttachments[]
 }
 
 /**

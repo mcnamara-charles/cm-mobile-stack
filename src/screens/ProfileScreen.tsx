@@ -9,8 +9,6 @@ import {
     ActivityIndicator,
     Alert,
     View,
-    Modal,
-    Pressable,
     Dimensions,
 } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
@@ -23,6 +21,7 @@ import * as FileSystem from 'expo-file-system'
 import { SUPABASE_URL } from '../../config'
 import { useTheme } from '../context/themeContext'
 import { ThemedView, ThemedText, BackButton } from '../components/themed'
+import ImageLightbox from '../components/ImageLightbox'
 import { useRefreshableScroll } from '../hooks/useRefreshableScroll'
 import { AppHeader } from '../components/themed/AppHeader'
 
@@ -61,9 +60,7 @@ export default function ProfileScreen() {
     } | null>(null)
     const [loading, setLoading] = useState(true)
     const [showLightbox, setShowLightbox] = useState(false)
-    const [lightboxImageError, setLightboxImageError] = useState(false)
     const [lightboxImageUrl, setLightboxImageUrl] = useState<string>('')
-    const [lightboxImageType, setLightboxImageType] = useState<'profile' | 'banner'>('profile')
 
     const fetchProfile = async () => {
         if (!user) return
@@ -206,9 +203,7 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                         onPress={() => {
                             setLightboxImageUrl(profile.banner_url || '')
-                            setLightboxImageType('banner')
                             setShowLightbox(true)
-                            setLightboxImageError(false)
                         }}
                         activeOpacity={0.8}
                         style={styles.bannerWrapper}
@@ -231,9 +226,7 @@ export default function ProfileScreen() {
                     <TouchableOpacity
                         onPress={() => {
                             setLightboxImageUrl(profile.profile_url || '')
-                            setLightboxImageType('profile')
                             setShowLightbox(true)
-                            setLightboxImageError(false)
                         }}
                         activeOpacity={0.8}
                         style={styles.avatarContainer}
@@ -423,45 +416,11 @@ export default function ProfileScreen() {
             </ScrollView>
 
             {/* Profile Picture Lightbox */}
-            <Modal
+            <ImageLightbox
                 visible={showLightbox}
-                transparent
-                animationType="fade"
-                statusBarTranslucent
-            >
-                <Pressable
-                    style={styles.lightboxOverlay}
-                    onPress={() => setShowLightbox(false)}
-                >
-                    <View style={[styles.lightboxContent, { overflow: 'visible' }]}>
-                        <View style={styles.lightboxImageContainer}>
-                            <Image
-                                key={`lightbox-${lightboxImageUrl}`}
-                                source={{ uri: lightboxImageUrl }}
-                                style={styles.lightboxImage}
-                                resizeMode="contain"
-                                onLoad={() => console.log('Lightbox image loaded')}
-                                onError={(e) =>
-                                    console.error('Lightbox image failed to load:', e.nativeEvent.error)
-                                }
-                            />
-                        </View>
-
-                        <TouchableOpacity
-                            style={[styles.closeButton, { backgroundColor: theme.colors.card }]}
-                            onPress={() => setShowLightbox(false)}
-                            activeOpacity={0.8}
-                        >
-                            <ThemedIcon
-                                type="ionicons"
-                                name="close"
-                                size={24}
-                                color={theme.colors.text}
-                            />
-                        </TouchableOpacity>
-                    </View>
-                </Pressable>
-            </Modal>
+                onClose={() => setShowLightbox(false)}
+                imageUrl={lightboxImageUrl}
+            />
         </ThemedView>
     )
 }
@@ -577,43 +536,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontStyle: 'italic',
     },
-    lightboxOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    lightboxContent: {
-        width: SCREEN_WIDTH * 0.9,
-        height: SCREEN_WIDTH * 0.9,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    lightboxImageContainer: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 20,
-        overflow: 'hidden',
-    },
-    lightboxImage: {
-        width: '100%',
-        height: '100%',
-    },
-    closeButton: {
-        position: 'absolute',
-        top: -60,
-        right: 0,
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-    },
+
     section: {
         paddingHorizontal: 24,
         marginTop: 24,

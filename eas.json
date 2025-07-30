@@ -12,7 +12,13 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "distribution": "internal",
+      "autoIncrement": true,
+      "env": {
+        "SUPABASE_URL": "https://ujjbsddbpxlkehgrtwyh.supabase.co",
+        "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqamJzZGRicHhsa2VoZ3J0d3loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyOTg3MTEsImV4cCI6MjA2ODg3NDcxMX0.UnlMp1VnEmh4BbNtaCLihDV5uS2R6VDNBCJkhU8N9AM",
+        "VERSION": "0.0.11"
+      }
     }
   },
   "submit": {

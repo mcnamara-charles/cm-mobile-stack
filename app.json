@@ -8,12 +8,12 @@
     ],
     "version": "0.0.10",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/iconx.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/logo-color.png",
-      "resizeMode": "contain",
+      "resizeMode": "center",
       "backgroundColor": "#1a1a1a"
     },
     "ios": {
@@ -21,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/iconx.png",
         "backgroundColor": "#ffffff"
       },
       "statusBar": {
@@ -36,7 +36,7 @@
       "visible": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/iconx.png"
     },
     "extra": {
       "environment": "development",
