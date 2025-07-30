@@ -29,6 +29,7 @@ import { getFlatListItems, type FlatListItem } from '../utils/messageGrouping'
 import { MessageThreadNavigationProp, MessageThreadRouteProp } from '../types/navigation'
 import { User } from '../types/global'
 import { useFadeAnimation } from '../hooks/animations'
+import { createFlatListKey } from '../utils/flatListKeyExtractor'
 
 
 
@@ -178,13 +179,7 @@ export default function MessageThreadScreen() {
         <FlatList
           ref={flatListRef}
           data={getFlatListItems(messages)}
-          keyExtractor={(item, index) => {
-            if (item.type === 'date') {
-              return `date-${item.date}-${index}`
-            } else {
-              return `group-${item.messages[0].id}-${index}`
-            }
-          }}
+          keyExtractor={createFlatListKey}
           renderItem={({ item }) => {
             if (item.type === 'date') {
               return (
@@ -200,7 +195,7 @@ export default function MessageThreadScreen() {
                       textTransform: 'uppercase',
                       letterSpacing: 0.5
                     }]}>
-                      {format(new Date(item.date), 'EEEE, MMM do')}
+                      {format(new Date(item.date || new Date()), 'EEEE, MMM do')}
                     </ThemedText>
                   </View>
                 </View>
@@ -209,7 +204,7 @@ export default function MessageThreadScreen() {
               return (
                 <View style={{ paddingHorizontal: 20, paddingVertical: 8 }}>
                   <MessageGroup
-                    messages={item.messages}
+                    messages={item.messages || []}
                     otherUser={otherUser}
                     currentUserId={user?.id || ''}
                     showTimestamps={showTimestamps}
